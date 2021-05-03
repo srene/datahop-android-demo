@@ -44,8 +44,10 @@ import network.datahop.datahopdemo.net.Config;
 import static android.content.Context.BLUETOOTH_SERVICE;
 import static java.lang.Thread.sleep;
 
+import datahop.BleNativeDriver;
 
-public class BLEServiceDiscovery {
+
+public class BLEServiceDiscovery implements BleNativeDriver{
 
 	private static final String TAG = "BLEServiceDiscovery";
 
@@ -134,15 +136,16 @@ public class BLEServiceDiscovery {
 		return mBleDiscovery;
 	}
 
-    public boolean start(ParcelUuid service_uuid)
+    //public boolean start(ParcelUuid service_uuid)
+	public void start(String service_uuid)
 	{
 
-		Log.d(TAG,"Service uuid:"+service_uuid.getUuid()+" "+started);
+		Log.d(TAG,"Service uuid:"+service_uuid+" "+started);
 		if(mBluetoothAdapter!=null&&!started) {
 			pendingWrite = 0;
 			sending = false;
 			started = true;
-			mServiceUUID = service_uuid;
+			mServiceUUID =new ParcelUuid(UUID.nameUUIDFromBytes(service_uuid.getBytes()));
 			results.clear();
 			//serverstate = BluetoothProfile.STATE_DISCONNECTED;
 			mConnectionState = STATE_DISCONNECTED;
@@ -159,9 +162,9 @@ public class BLEServiceDiscovery {
 				LocalBroadcastManager.getInstance(context).registerReceiver(mBroadcastReceiver, getIntentFilter());
 			}catch (Exception e){Log.d(TAG,"leaked register");}*/
 			scanLeDevice();
-			return true;
+			//return true;
 		} else {
-			return false;
+			//return false;
 
 		}
 
@@ -186,6 +189,10 @@ public class BLEServiceDiscovery {
 			//started=false;
 
 		//}
+
+	}
+
+	public void closeConnWithPeer(String peer){
 
 	}
 

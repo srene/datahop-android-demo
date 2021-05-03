@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 import datahop.Datahop;
 import datahop.Hook;
-import network.datahop.datahopdemo.net.ble.BleInterface;
+import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
 
 public class MainActivity extends AppCompatActivity implements Hook {
 
@@ -22,10 +22,10 @@ public class MainActivity extends AppCompatActivity implements Hook {
         setContentView(R.layout.activity_main);
         Log.d("-----Version :", Datahop.version());
         try {
-            Datahop.init(getApplicationContext().getCacheDir()+"/"+root, this);
+            BLEServiceDiscovery bleDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
+
+            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDriver);
             // set ble driver
-            BleInterface bleDriver = new BleInterface(getApplicationContext());
-            Datahop.setBleDriver(bleDriver);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -67,4 +67,5 @@ public class MainActivity extends AppCompatActivity implements Hook {
         Log.d("* Peer Disconnected *", s);
         activePeers.remove(s);
     }
+
 }
