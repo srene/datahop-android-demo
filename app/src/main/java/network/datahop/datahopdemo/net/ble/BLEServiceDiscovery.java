@@ -94,6 +94,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 		this.lListener = lListener;
 		this.dListener = dListener;
+		this.results = new HashSet<BluetoothDevice>();
 
 		//mTimers = timers;
 		this.stats = stats;
@@ -124,7 +125,6 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		mBluetoothManager = (BluetoothManager) context.getSystemService(BLUETOOTH_SERVICE);
 		mBluetoothAdapter = mBluetoothManager.getAdapter();
 		if(mBluetoothAdapter!=null)mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
-		//results = new HashSet<BluetoothDevice>();
 	}
 
 	// Singleton method
@@ -178,17 +178,19 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	public void stop()
 	{
-		//if(started) {
-			Log.d(TAG,"Stop");
+		if(started) {
+			Log.d(TAG, "Stop");
 			//disconnect();
 			//try{context.unregisterReceiver(mBroadcastReceiver);}catch (IllegalArgumentException e){Log.d(TAG,"Unregister failed "+e);}
 			try {
 				mLEScanner.stopScan(mScanCallback);
 				mLEScanner.flushPendingScanResults(mScanCallback);
-			}catch (Exception e){Log.d(TAG,"Failed when stopping ble scanner "+e);}
-			//started=false;
+			} catch (Exception e) {
+				Log.d(TAG, "Failed when stopping ble scanner " + e);
+			}
+			started=false;
 
-		//}
+		}
 
 	}
 
@@ -207,23 +209,23 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		List<ScanFilter> filters = new ArrayList<ScanFilter>();
 			// Stops scanning after a pre-defined scan period.
 		ScanFilter scanFilter = new ScanFilter.Builder()
-				//.setServiceUuid(mServiceUUID)
-				.setDeviceName("BLEDataHop")
+				.setServiceUuid(mServiceUUID)
+		//		.setDeviceName("BLEDataHop")
 				.build();
-		ScanFilter scanFilter2 = new ScanFilter.Builder()
+/*		ScanFilter scanFilter2 = new ScanFilter.Builder()
 				.setServiceUuid(mServiceUUID)
 				//.setDeviceName("BLEDataHop")
-				.build();
+				.build();*/
 		filters.add(scanFilter);
-		filters.add(scanFilter2);
+	//	filters.add(scanFilter2);
 
-		Log.d(TAG, "Start scan");
+		Log.d(TAG, "Start scan "+mConnectionState);
 
-		if(mConnectionState==STATE_DISCONNECTED&&!mScanning)
+		if(mConnectionState==STATE_DISCONNECTED)
 		{
 		    try {
+				Log.d(TAG, "Scanning");
                 mLEScanner.startScan(filters, settings, mScanCallback);
-                mScanning = true;
             }catch (IllegalStateException e){Log.d(TAG,"Exception "+e);}
 		}
 
@@ -235,14 +237,14 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 			//byte[] mScanRecord = result.getScanRecord().getBytes();
 			//final StringBuilder stringBuilder = new StringBuilder(advertisementData.length);
 			//for (byte byteChar : advertisementData) { stringBuilder.append((char) byteChar);}
-			Log.d(TAG,"Scan result "+result.getScanRecord().getDeviceName()+" "+result.getScanRecord().getServiceUuids()+" "+new String(result.getScanRecord().getManufacturerSpecificData(0)));
+			Log.d(TAG,"Scan result "+result.getScanRecord().getDeviceName());//+" "+result.getScanRecord().getServiceUuids()+" "+new String(result.getScanRecord().getManufacturerSpecificData(0)));
 			/*String action = USER_DISCOVERED;
 			Intent broadcast = new Intent(action);
 			broadcast.putExtra("username", new String(result.getScanRecord().getManufacturerSpecificData(0)));
 			broadcast.putExtra("address", result.getDevice().getAddress());
 			LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);*/
 			//String device = new String(result.getScanRecord().getManufacturerSpecificData(0));
-			dListener.onUserDiscovered(new String(result.getScanRecord().getManufacturerSpecificData(0)),result.getDevice().getAddress());
+//			dListener.onUserDiscovered(new String(result.getScanRecord().getManufacturerSpecificData(0)),result.getDevice().getAddress());
 			//if(device.equals("pixel2"))
 			results.add(result.getDevice());
 		}
@@ -424,15 +426,15 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 			if (newState == BluetoothProfile.STATE_CONNECTED&&mConnectionState!=BluetoothProfile.STATE_CONNECTED) {
 				mConnectionState = STATE_CONNECTED;
 				Log.d(TAG, "Connected to GATT server: "+gatt.getDevice().getAddress());
-				int con = stats.getBtConnections();
-				stats.setBtConnections(++con);
+//				int con = stats.getBtConnections();
+//				stats.setBtConnections(++con);
 				if(mBluetoothGatt!=null)mBluetoothGatt.discoverServices();
 
 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 				mConnectionState = STATE_DISCONNECTED;
 				Log.d(TAG, "Disconnected from GATT server.");
 				if(mBluetoothGatt!=null)mBluetoothGatt.close();
-				if(started)tryConnection();
+				//if(started)tryConnection();
 			}
 		}
 
