@@ -53,7 +53,7 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
     private BroadcastReceiver receiver;
     private IntentFilter filter;
 
-    private StatsHandler stats;
+ //   private StatsHandler stats;
 
     public static final String TAG = "WifiDirectHotSpot";
 
@@ -79,10 +79,10 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         public void onFailure(int reason);
     }
 
-    public WifiDirectHotSpot(Context Context, HotspotListener nListener, StatsHandler stats/*, SettingsPreferences timers, JobParameters params*/)
+    public WifiDirectHotSpot(Context Context, HotspotListener nListener)//, StatsHandler stats/*, SettingsPreferences timers, JobParameters params*/)
     {
         this.context = Context;
-        this.stats = stats;
+  //      this.stats = stats;
         handler = new Handler();
         broadcastHandler = new Handler();
         //this.timers = timers;
@@ -147,7 +147,7 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         if(started)
         {
             Log.d(TAG,"Stop");
-            stats.setHsSSID("");
+  //          stats.setHsSSID("");
             broadcastHandler.removeCallbacksAndMessages(null);
             handler.removeCallbacksAndMessages(null);
             this.context.unregisterReceiver(receiver);
@@ -215,14 +215,14 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
 
         try {
             Collection<WifiP2pDevice> devlist = group.getClientList();
-            stats.setHsSSID(group.getNetworkName());
+   //         stats.setHsSSID(group.getNetworkName());
 
             int numm = 0;
             for (WifiP2pDevice peer : group.getClientList()) {
                 numm++;
                 Log.d(TAG,"Client " + numm + " : "  + peer.deviceName + " " + peer.deviceAddress);
             }
-            stats.setHsClients(numm);
+   //         stats.setHsClients(numm);
             if(numm>0&!connected){
                 Log.d(TAG,"Client " + numm +" connect");
                 connected=true;

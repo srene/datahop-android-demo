@@ -51,29 +51,30 @@ public class GattServerCallback extends BluetoothGattServerCallback {
     String network,password;
     WifiDirectHotSpot hotspot;
     private Context mContext;
-    HashMap<UUID,ContentAdvertisement> ca;
+ //   HashMap<UUID,ContentAdvertisement> ca;
     BluetoothGattCharacteristic mCharacteristic;
     //DataHopConnectivityService service;
     ParcelUuid mServiceUUID;
     private static final String TAG = "GattServerCallback";
-    StatsHandler stats;
+  //  StatsHandler stats;
     //ContentDatabaseHandler db;
 
     List<String> groups;
     BroadcastReceiver mBroadcastReceiver;
 
-    public GattServerCallback(Context context, WifiDirectHotSpot hotspot, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
+    public GattServerCallback(Context context, WifiDirectHotSpot hotspot,String parcelUuid){//, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
 
         mDevices = new ArrayList<>();
         mClientConfigurations = new HashMap<>();
         mContext = context;
         this.hotspot = hotspot;
-        this.ca = ca;
+    //    this.ca = ca;
         //db = new ContentDatabaseHandler(context);
         network = null;
-        mServiceUUID = service_uuid;
-        Log.d(TAG,"Service uuid:"+service_uuid);
-        this.stats = stats;
+        mServiceUUID =  new ParcelUuid(UUID.nameUUIDFromBytes(parcelUuid.getBytes()));
+        ;
+        Log.d(TAG,"Service uuid:"+mServiceUUID);
+        //this.stats = stats;
         this.groups = groups;
 
         mBroadcastReceiver = new BroadcastReceiver() {
@@ -123,8 +124,8 @@ public class GattServerCallback extends BluetoothGattServerCallback {
 
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             mDevices.add(device);
-            int con = stats.getBtConnections();
-            stats.setBtConnections(++con);
+     //       int con = stats.getBtConnections();
+     //       stats.setBtConnections(++con);
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             mDevices.remove(device);
             mClientConfigurations.remove(device.getAddress());
@@ -165,7 +166,8 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         if(BluetoothUtils.matchAnyCharacteristic(characteristic.getUuid(),groups))
         {
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-            if(ca.get(characteristic.getUuid()).connectFilter(value)&&network!=null) {
+      //      if(ca.get(characteristic.getUuid()).connectFilter(value)&&network!=null) {
+            if(characteristic.getUuid().equals(value)&&network!=null) {
                 Log.d(TAG,"Connecting");
                 hotspot.start(new WifiDirectHotSpot.StartStopListener() {
                     public void onSuccess() {
