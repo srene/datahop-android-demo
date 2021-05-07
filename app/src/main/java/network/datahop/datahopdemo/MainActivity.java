@@ -25,6 +25,8 @@ import datahop.ConnectionHook;
 import datahop.BleHook;
 import datahop.WifiHook;
 import network.datahop.datahopdemo.net.Config;
+import network.datahop.datahopdemo.net.DiscoveryListener;
+import network.datahop.datahopdemo.net.LinkListener;
 import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
 import network.datahop.datahopdemo.net.ble.GattServerCallback;
@@ -33,7 +35,7 @@ import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
 
 import static java.util.UUID.nameUUIDFromBytes;
 
-public class MainActivity extends AppCompatActivity implements ConnectionHook, BleHook, WifiHook, HotspotListener {
+public class MainActivity extends AppCompatActivity implements ConnectionHook, BleHook, WifiHook, HotspotListener, LinkListener {
 
     private static final String root = ".datahop";
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -79,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
                 e.printStackTrace();
             }
         }
+        startHotspot();
     }
 
     @Override
@@ -198,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
         Log.d(TAG,"StartAdverstising");
         BLEAdvertising bleAdv = new BLEAdvertising(getApplicationContext());
         bleAdv.startAdvertising(Datahop.getServiceTag());
+        startGATTServer();
     }
 
     @Override
@@ -225,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
         BLEServiceDiscovery bleDiscovery = BLEServiceDiscovery.getInstance(getApplicationContext());
 
         bleDiscovery.start(Datahop.getServiceTag());
-
+        bleDiscovery.setListener(this);
         Handler handler = new Handler(Looper.getMainLooper());
         handler.postDelayed(new Runnable() {
             @Override
@@ -314,20 +318,33 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
     private void setupServer() {
 
         ParcelUuid SERVICE_UUID = new ParcelUuid(UUID.nameUUIDFromBytes(Datahop.getServiceTag().getBytes()));
-        BluetoothGattService service = new BluetoothGattService(SERVICE_UUID.getUuid(),
-                BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        BluetoothGattService service = new BluetoothGattService(SERVICE_UUID.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
 
-        /*for (Group group : db.getGroups()) {
-            // Write characteristic
-            UUID CHARACTERISTIC_UUID = nameUUIDFromBytes(group.getName().getBytes());
-            G.Log(TAG, "Advertising characteristic " + CHARACTERISTIC_UUID.toString());
+
+        // Write characteristic
+        int charnum= (int)Datahop.getAdvertisingUUIDNum();
+        for (int i=0;i<charnum;i++){
+            String characteristic = Datahop.getAdvertisingUUID(i);
+            UUID CHARACTERISTIC_UUID = UUID.nameUUIDFromBytes(characteristic.getBytes());
+            Log.d(TAG, "Advertising characteristic " + CHARACTERISTIC_UUID.toString());
             BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
                     CHARACTERISTIC_UUID,
                     BluetoothGattCharacteristic.PROPERTY_WRITE,
                     BluetoothGattCharacteristic.PERMISSION_WRITE);
             service.addCharacteristic(writeCharacteristic);
-        }*/
-
+        }
         mBluetoothGattServer.addService(service);
+    }
+
+
+    @Override
+    public void linkNetworkDiscovered(String network) {
+        Log.d(TAG,"linkNetworkDiscovered "+network);
+
+    }
+
+    @Override
+    public void linkNetworkSameDiscovered(String device) {
+        Log.d(TAG,"linkNetworkSameDiscovered "+device);
     }
 }

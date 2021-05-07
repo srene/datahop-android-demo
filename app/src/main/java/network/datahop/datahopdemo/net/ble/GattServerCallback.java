@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import datahop.Datahop;
 import network.datahop.datahopdemo.net.ContentAdvertisement;
 import network.datahop.datahopdemo.net.StatsHandler;
 import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
@@ -59,7 +60,6 @@ public class GattServerCallback extends BluetoothGattServerCallback {
   //  StatsHandler stats;
     //ContentDatabaseHandler db;
 
-    List<String> groups;
     BroadcastReceiver mBroadcastReceiver;
 
     public GattServerCallback(Context context, WifiDirectHotSpot hotspot,String parcelUuid){//, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
@@ -72,35 +72,15 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         //db = new ContentDatabaseHandler(context);
         network = null;
         mServiceUUID =  new ParcelUuid(UUID.nameUUIDFromBytes(parcelUuid.getBytes()));
-        ;
+
         Log.d(TAG,"Service uuid:"+mServiceUUID);
-        //this.stats = stats;
-        this.groups = groups;
 
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.d(TAG, "Broadcast received " + intent);
-                switch (intent.getAction()) {
-                    case GattServerCallback.DIRECT_CONNECTION_ACCEPTED:
-                        notifyCharacteristic(new byte[]{0x00}, Constants.CHARACTERISTIC_DIRECT_UUID);
-
-                        break;
-                    case GattServerCallback.DIRECT_CONNECTION_REJECTED:
-                        notifyCharacteristic(new byte[]{0x01}, Constants.CHARACTERISTIC_DIRECT_UUID);
-                        break;
-                }
-                LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mBroadcastReceiver);
-
-            }
-        };
 
 
     }
 
     public void stop()
     {
-        LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mBroadcastReceiver);
         mGattServer.close();
         network=password=null;
         mGattServer=null;
@@ -163,11 +143,24 @@ public class GattServerCallback extends BluetoothGattServerCallback {
                 offset,
                 value);
 
+
+        List<UUID> groups = new ArrayList<>();
+        long num = Datahop.getAdvertisingUUIDNum();
+        HashMap<UUID,byte[]> values = new HashMap<>();
+        for(int i=0;i<num;i++) {
+            String character = Datahop.getAdvertisingUUID(i);
+            groups.add(UUID.nameUUIDFromBytes(character.getBytes()));
+            values.put(UUID.nameUUIDFromBytes(character.getBytes()),Datahop.getAdvertisingInfo(character));
+        }
+
         if(BluetoothUtils.matchAnyCharacteristic(characteristic.getUuid(),groups))
         {
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
       //      if(ca.get(characteristic.getUuid()).connectFilter(value)&&network!=null) {
-            if(characteristic.getUuid().equals(value)&&network!=null) {
+            String valueString = new String(value);
+            String valueString2 = new String(values.get(characteristic.getUuid()));
+            Log.d(TAG,"Characteristic check "+characteristic.getUuid().toString()+" "+network+" "+valueString2+" "+valueString);
+            if(!values.get(characteristic.getUuid()).equals(value)&&network!=null) {
                 Log.d(TAG,"Connecting");
                 hotspot.start(new WifiDirectHotSpot.StartStopListener() {
                     public void onSuccess() {

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import datahop.Datahop;
 import network.datahop.datahopdemo.net.ContentAdvertisement;
 import network.datahop.datahopdemo.net.DiscoveryListener;
 import network.datahop.datahopdemo.net.LinkListener;
@@ -76,7 +77,6 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	boolean mInitialized = false;
 	LinkListener lListener;
-	DiscoveryListener dListener;
 
 	BluetoothDevice device=null;
 	ParcelUuid mServiceUUID;
@@ -85,6 +85,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 	boolean sending;
 
 	//public BLEServiceDiscovery(LinkListener lListener, DiscoveryListener dListener, Context context/*, SettingsPreferences timers*/, StatsHandler stats)
+
 	public BLEServiceDiscovery(Context context)
 	{
 
@@ -92,8 +93,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		//mHandler = new Handler();
         //sHandler = new Handler();
 
-		this.lListener = lListener;
-		this.dListener = dListener;
+
 		this.results = new HashSet<BluetoothDevice>();
 
 		//mTimers = timers;
@@ -170,6 +170,11 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
     }
 
+    public void setListener(LinkListener lListener){
+
+		this.lListener = lListener;
+	}
+
 	/*public static IntentFilter getIntentFilter() {
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(BLESERVER_STATE);
@@ -178,19 +183,12 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	public void stop()
 	{
-		if(started) {
-			Log.d(TAG, "Stop");
-			//disconnect();
-			//try{context.unregisterReceiver(mBroadcastReceiver);}catch (IllegalArgumentException e){Log.d(TAG,"Unregister failed "+e);}
-			try {
-				mLEScanner.stopScan(mScanCallback);
-				mLEScanner.flushPendingScanResults(mScanCallback);
-			} catch (Exception e) {
-				Log.d(TAG, "Failed when stopping ble scanner " + e);
-			}
-			started=false;
 
-		}
+
+		try {
+			mLEScanner.stopScan(mScanCallback);
+			mLEScanner.flushPendingScanResults(mScanCallback);
+		}catch (Exception e){Log.d(TAG,"Failed when stopping ble scanner "+e);}
 
 	}
 
@@ -408,9 +406,14 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 			Log.d(TAG,"Not initialized.");
 			return;
 		}
-
+		List<UUID> groups = new ArrayList<>();
+		long num = Datahop.getAdvertisingUUIDNum();
+		for(int i=0;i<num;i++) {
+			String characteristic = Datahop.getAdvertisingUUID(i);
+			groups.add(UUID.nameUUIDFromBytes(characteristic.getBytes()));
+		}
 		//BluetoothGattCharacteristic characteristic = BluetoothUtils.findDataHopCharacteristic(mBluetoothGatt,mServiceUUID.getUuid());
-		List<BluetoothGattCharacteristic> characteristics = BluetoothUtils.findCharacteristics(mBluetoothGatt,mServiceUUID.getUuid(),new ArrayList<String>());
+		List<BluetoothGattCharacteristic> characteristics = BluetoothUtils.findCharacteristics(mBluetoothGatt,mServiceUUID.getUuid(),groups);
 		pendingWrite+=characteristics.size();
 		Log.d(TAG,"Found "+pendingWrite+" characteristics. TryWriting");
 		Runnable r = new TryWriting(characteristics);
@@ -450,7 +453,13 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 			Log.d(TAG,"Gatt "+gatt.getServices().size());
 
-			List<BluetoothGattCharacteristic> matchingCharacteristics = BluetoothUtils.findCharacteristics(gatt,mServiceUUID.getUuid(),new ArrayList<String>());
+			List<UUID> groups = new ArrayList<>();
+			long num = Datahop.getAdvertisingUUIDNum();
+			for(int i=0;i<num;i++) {
+				String characteristic = Datahop.getAdvertisingUUID(i);
+				groups.add(UUID.nameUUIDFromBytes(characteristic.getBytes()));
+			}
+			List<BluetoothGattCharacteristic> matchingCharacteristics = BluetoothUtils.findCharacteristics(gatt,mServiceUUID.getUuid(),groups);
 			if (matchingCharacteristics.isEmpty()) {
 				Log.d(TAG,"Unable to find characteristics.");
 				return;
@@ -569,8 +578,23 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 				if(!started)return;
 
 		//		ContentAdvertisement cAdv = ca.get(characteristic.getUuid());
-				//if(cAdv!=null) {
-					byte[] messageBytes = new byte[10];
+
+				byte[] messageBytes = null;
+				List<UUID> groups = new ArrayList<>();
+				long num = Datahop.getAdvertisingUUIDNum();
+				for(int i=0;i<num;i++) {
+					String characeristicString = Datahop.getAdvertisingUUID(i);
+					//Log.d(TAG,"Try writing "+characeristicString+" "+UUID.nameUUIDFromBytes(characeristicString.getBytes()));
+					UUID characteristicUUID = UUID.nameUUIDFromBytes(characeristicString.getBytes());
+					if(characteristicUUID.equals(characteristic.getUuid()))messageBytes= Datahop.getAdvertisingInfo(characeristicString);
+
+				}
+
+				/*byte[] messageBytes = Datahop.getAdvertisingInfo("topic1");
+				Log.d(TAG,"Try writing "+characteristic.getUuid().toString());
+				Log.d(TAG,"Try writing "+messageBytes.toString());*/
+				if(messageBytes!=null) {
+					//byte[] messageBytes = new byte[10];
 
 					Log.d(TAG, "Sending message: " + new String(messageBytes) + " " + messageBytes.length + " " + characteristic.getUuid().toString());
 
@@ -600,7 +624,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 						sleep(1000);
 					} catch (InterruptedException e) {
 					}
-				//}
+				}
 			}
 		}
 	}

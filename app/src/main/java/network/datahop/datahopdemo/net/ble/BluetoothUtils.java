@@ -33,7 +33,7 @@ public class BluetoothUtils {
     // Characteristics
     private static final String TAG="BluetoothUtils";
 
-    public static List<BluetoothGattCharacteristic> findCharacteristics(BluetoothGatt bluetoothGatt, UUID SERVICE_UUID,List<String> groups) {
+    public static List<BluetoothGattCharacteristic> findCharacteristics(BluetoothGatt bluetoothGatt, UUID SERVICE_UUID,List<UUID> groups) {
         List<BluetoothGattCharacteristic> matchingCharacteristics = new ArrayList<>();
 
         List<BluetoothGattService> serviceList = bluetoothGatt.getServices();
@@ -41,14 +41,13 @@ public class BluetoothUtils {
         if (service == null) {
             return matchingCharacteristics;
         }
-
         List<BluetoothGattCharacteristic> characteristicList = service.getCharacteristics();
 
-        for (String group : groups)
+        for (UUID group : groups)
         {
-            String CHARACTERISTIC_UUID = nameUUIDFromBytes(group.getBytes()).toString();
+            String CHARACTERISTIC_UUID = group.toString();
             for (BluetoothGattCharacteristic characteristic : characteristicList) {
-               // Log.d(TAG,"Characteristic "+characteristic.getUuid().toString()+" "+CHARACTERISTIC_UUID);
+                Log.d(TAG,"Characteristic "+characteristic.getUuid().toString()+" "+CHARACTERISTIC_UUID);
                 if(uuidMatches(characteristic.getUuid().toString(), CHARACTERISTIC_UUID))
                 {
                 //if (isMatchingCharacteristic(characteristic)) {
@@ -60,11 +59,11 @@ public class BluetoothUtils {
         return matchingCharacteristics;
     }
 
-    public static boolean matchAnyCharacteristic(UUID SERVICE_UUID,List<String> groups) {
+    public static boolean matchAnyCharacteristic(UUID SERVICE_UUID,List<UUID> groups) {
 
-        for (String group : groups)
+        for (UUID group : groups)
         {
-            String CHARACTERISTIC_UUID = nameUUIDFromBytes(group.getBytes()).toString();
+            String CHARACTERISTIC_UUID = group.toString();
             if(uuidMatches(SERVICE_UUID.toString(), CHARACTERISTIC_UUID))
             {
                 //if (isMatchingCharacteristic(characteristic)) {
