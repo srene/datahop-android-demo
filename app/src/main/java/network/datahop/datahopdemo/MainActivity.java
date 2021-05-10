@@ -4,37 +4,20 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattServer;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.ParcelUuid;
 import android.util.Log;
 import android.widget.TextView;
 import java.util.ArrayList;
-import java.util.UUID;
 
 import datahop.Datahop;
 import datahop.ConnectionHook;
-import datahop.WifiHook;
-import network.datahop.datahopdemo.net.Config;
-import network.datahop.datahopdemo.net.DiscoveryListener;
-import network.datahop.datahopdemo.net.ble.BleDiscoveryListener;
 import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
-import network.datahop.datahopdemo.net.ble.GattServerCallback;
 import network.datahop.datahopdemo.net.wifi.HotspotListener;
-import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
 
-import static java.util.UUID.nameUUIDFromBytes;
-
-public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener, BleDiscoveryListener {
+public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener {
 
     private static final String root = ".datahop";
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -53,9 +36,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
         setContentView(R.layout.activity_main);
         Log.d("-----Version :", Datahop.version());
         try {
-            BLEServiceDiscovery bleDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
-  //          hotspot = new WifiDirectHotSpot(getApplicationContext(), this);
             BLEServiceDiscovery bleDiscoveryDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
+
             BLEAdvertising bleAdvertisingDriver = BLEAdvertising.getInstance(getApplicationContext());
 
             Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver);
@@ -237,21 +219,4 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
     }
 
 
-    @Override
-    public void peerDiscovered(String device) {
-
-        Datahop.peerDiscovered(device);
-    }
-
-    @Override
-    public void peerDiscoveredDiffStatus(String network) {
-        Datahop.peerDifferentStatusDiscovered(network,null,null);
-
-    }
-
-    @Override
-    public void peerDiscoveredSameStatus(String device) {
-        Datahop.peerSameStatusDiscovered(device,null,null);
-
-    }
 }
