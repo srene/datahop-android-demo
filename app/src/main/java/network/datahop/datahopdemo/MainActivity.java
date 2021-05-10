@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
                 e.printStackTrace();
             }
         }
+        requestForPermissions();
         //startHotspot();
     }
 
@@ -238,6 +239,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
     @Override
     public void peerDiscovered(String device) {
+
         Datahop.peerDiscovered(device);
     }
 

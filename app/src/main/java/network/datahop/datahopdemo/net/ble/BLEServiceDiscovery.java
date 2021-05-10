@@ -232,7 +232,6 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	private void stopScanning()
 	{
-		started=false;
 		try {
 			mLEScanner.stopScan(mScanCallback);
 			mLEScanner.flushPendingScanResults(mScanCallback);
@@ -442,7 +441,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
             tryConnection();
         }else {
         	Log.d(TAG, "Attempting to connect");
-			lListener.peerDiscoveredDiffStatus(message);
+			if(lListener!=null)lListener.peerDiscoveredDiffStatus(message);
 			disconnect();
 			//started=false;
 			//close();
@@ -621,7 +620,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		@Override
 		public void run() {
 
-			Log.d(TAG,"Trywriting "+characteristics.size()+" "+started);
+			Log.d(TAG,"Trywriting "+characteristics.size()+" "+started+" "+advertisingInfo.size());
 			for (BluetoothGattCharacteristic characteristic : characteristics) {
 				//if (characteristic == null||!started) {
 				if (characteristic == null){
@@ -635,16 +634,22 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		//		ContentAdvertisement cAdv = ca.get(characteristic.getUuid());
 
 				byte[] messageBytes = null;
-				List<UUID> groups = new ArrayList<>();
-				long num = Datahop.getAdvertisingUUIDNum();
+				//List<UUID> groups = new ArrayList<>();
+				/*long num = Datahop.getAdvertisingUUIDNum();
 				for(int i=0;i<num;i++) {
 					String characeristicString = Datahop.getAdvertisingUUID(i);
 					//Log.d(TAG,"Try writing "+characeristicString+" "+UUID.nameUUIDFromBytes(characeristicString.getBytes()));
 					UUID characteristicUUID = UUID.nameUUIDFromBytes(characeristicString.getBytes());
 					if(characteristicUUID.equals(characteristic.getUuid()))messageBytes= Datahop.getAdvertisingInfo(characeristicString);
 
-				}
+				}*/
 
+
+				for(UUID uuid : advertisingInfo.keySet()){
+					Log.d(TAG,"Advertising info uuid "+uuid+" "+characteristic.getUuid());
+					if(characteristic.getUuid().equals(uuid))messageBytes=advertisingInfo.get(uuid);
+					break;
+				}
 				/*byte[] messageBytes = Datahop.getAdvertisingInfo("topic1");
 				Log.d(TAG,"Try writing "+characteristic.getUuid().toString());
 				Log.d(TAG,"Try writing "+messageBytes.toString());*/

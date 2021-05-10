@@ -154,7 +154,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
             groups.add(UUID.nameUUIDFromBytes(character.getBytes()));
             values.put(UUID.nameUUIDFromBytes(character.getBytes()),Datahop.getAdvertisingInfo(character));
         }*/
-
+        Log.d(TAG,"onCharacteristicWriteRequest");
         if(BluetoothUtils.matchAnyCharacteristic(characteristic.getUuid(),groups))
         {
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
@@ -187,7 +187,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
             }
 
         }
-        if(BluetoothUtils.matchDirectConnectionCharacteristic(characteristic))
+        /*if(BluetoothUtils.matchDirectConnectionCharacteristic(characteristic))
         {
             Log.d(TAG,"Direct connection request");
             LocalBroadcastManager.getInstance(mContext).registerReceiver(mBroadcastReceiver,getIntentFilter());
@@ -198,7 +198,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
                     .putExtra("user", new String(value));
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(broadcast);
 
-        }
+        }*/
     }
 
     @Override
