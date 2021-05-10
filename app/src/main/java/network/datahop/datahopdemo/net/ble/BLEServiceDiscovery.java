@@ -24,6 +24,8 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -66,8 +68,11 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 	private static final int STATE_CONNECTING = 1;
 	private static final int STATE_CONNECTED = 2;
 
+	private long btIdleFgTime = Config.bleAdvertiseForegroundDuration;
+	private long scanTime = Config.bleScanDuration;
 	//public static final String USER_DISCOVERED = "user_discovered";
 
+	private HashMap<UUID,byte[]> advertisingInfo;
     private boolean mScanning;
 	Set<BluetoothDevice> results;
 
@@ -84,6 +89,9 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 	int pendingWrite;
 	boolean sending;
 
+	Handler mHandler;
+
+	private  boolean exit;
 	//public BLEServiceDiscovery(LinkListener lListener, DiscoveryListener dListener, Context context/*, SettingsPreferences timers*/, StatsHandler stats)
 
 	public BLEServiceDiscovery(Context context)
@@ -93,7 +101,8 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		//mHandler = new Handler();
         //sHandler = new Handler();
 
-
+		mHandler = new Handler(Looper.getMainLooper());
+		advertisingInfo = new HashMap();
 		this.results = new HashSet<BluetoothDevice>();
 
 		//mTimers = timers;
@@ -136,8 +145,50 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		return mBleDiscovery;
 	}
 
-    //public boolean start(ParcelUuid service_uuid)
-	public void start(String service_uuid)
+	@Override
+	public void start(String service_uuid) {
+	//public void startScanning(){
+		//Log.d(TAG,"startScanning " + Datahop.getServiceTag());
+		//BLEServiceDiscovery bleDiscovery = BLEServiceDiscovery.getInstance(getApplicationContext());
+		exit=false;
+		startScanning(service_uuid);
+		//bleDiscovery.setListener(this);
+		Handler handler = new Handler(Looper.getMainLooper());
+		handler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				Log.d(TAG, "Stop scan");
+				stopScanning();
+				tryConnection();
+				mHandler.postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						Log.d(TAG,"Start service");
+						//bleScan.tryConnection();
+						if(!exit)start(service_uuid);
+					}
+				}, btIdleFgTime);
+			}
+		}, scanTime);
+	}
+
+
+
+	@Override
+	public void stop()
+	{
+		exit=true;
+		stopScanning();
+	}
+
+	@Override
+	public void addAdvertisingInfo(String characteristic, byte[] info){
+		advertisingInfo.put(UUID.nameUUIDFromBytes(characteristic.getBytes()),info);
+	}
+
+	//public boolean start(ParcelUuid service_uuid)
+	//public void start(String service_uuid)
+	public void startScanning(String service_uuid)
 	{
 
 		Log.d(TAG,"Service uuid:"+service_uuid+" "+started);
@@ -181,9 +232,9 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		return filter;
 	}*/
 
-	public void stop()
-	{
 
+	private void stopScanning()
+	{
 
 		try {
 			mLEScanner.stopScan(mScanCallback);
@@ -386,7 +437,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
         }
 		pendingWrite--;
 		if (Arrays.equals(new byte[]{0x00}, messageBytes)){
-            lListener.linkNetworkSameDiscovered(device.getAddress());
+            if(lListener!=null)lListener.linkNetworkSameDiscovered(device.getAddress());
             if (pendingWrite<=0)
 				disconnect();
             tryConnection();
@@ -406,13 +457,16 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 			Log.d(TAG,"Not initialized.");
 			return;
 		}
-		List<UUID> groups = new ArrayList<>();
+		/*List<UUID> groups = new ArrayList<>();
 		long num = Datahop.getAdvertisingUUIDNum();
 		for(int i=0;i<num;i++) {
 			String characteristic = Datahop.getAdvertisingUUID(i);
 			groups.add(UUID.nameUUIDFromBytes(characteristic.getBytes()));
-		}
+		}*/
 		//BluetoothGattCharacteristic characteristic = BluetoothUtils.findDataHopCharacteristic(mBluetoothGatt,mServiceUUID.getUuid());
+		List<UUID> groups = new ArrayList();
+		groups.addAll(advertisingInfo.keySet());
+
 		List<BluetoothGattCharacteristic> characteristics = BluetoothUtils.findCharacteristics(mBluetoothGatt,mServiceUUID.getUuid(),groups);
 		pendingWrite+=characteristics.size();
 		Log.d(TAG,"Found "+pendingWrite+" characteristics. TryWriting");
@@ -453,12 +507,14 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 			Log.d(TAG,"Gatt "+gatt.getServices().size());
 
-			List<UUID> groups = new ArrayList<>();
+			/*List<UUID> groups = new ArrayList<>();
 			long num = Datahop.getAdvertisingUUIDNum();
 			for(int i=0;i<num;i++) {
 				String characteristic = Datahop.getAdvertisingUUID(i);
 				groups.add(UUID.nameUUIDFromBytes(characteristic.getBytes()));
-			}
+			}*/
+			List<UUID> groups = new ArrayList<>();
+			groups.addAll(advertisingInfo.keySet());
 			List<BluetoothGattCharacteristic> matchingCharacteristics = BluetoothUtils.findCharacteristics(gatt,mServiceUUID.getUuid(),groups);
 			if (matchingCharacteristics.isEmpty()) {
 				Log.d(TAG,"Unable to find characteristics.");

@@ -22,7 +22,6 @@ import java.util.UUID;
 
 import datahop.Datahop;
 import datahop.ConnectionHook;
-import datahop.BleHook;
 import datahop.WifiHook;
 import network.datahop.datahopdemo.net.Config;
 import network.datahop.datahopdemo.net.DiscoveryListener;
@@ -35,39 +34,31 @@ import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
 
 import static java.util.UUID.nameUUIDFromBytes;
 
-public class MainActivity extends AppCompatActivity implements ConnectionHook, BleHook, WifiHook, HotspotListener, LinkListener {
+public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener, LinkListener {
 
     private static final String root = ".datahop";
     private static final String TAG = MainActivity.class.getSimpleName();
     ArrayList<String> activePeers = new ArrayList<>();
-    long btIdleFgTime = Config.bleAdvertiseForegroundDuration;
-    long scanTime = Config.bleScanDuration;
-    Handler mHandler;
-    GattServerCallback serverCallback;
-    BluetoothGattServer mBluetoothGattServer;
-    BluetoothManager manager;
-    BluetoothAdapter btAdapter;
-    WifiDirectHotSpot hotspot;
+
+ //   WifiDirectHotSpot hotspot;
 
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final int PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 2;
     private static final int PERMISSION_WIFI_STATE = 3;
     //private static final int PERMISSION_REQUEST_WIFI_CHANGE = 4;
 
-    boolean exit;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.d("-----Version :", Datahop.version());
-        mHandler = new Handler(Looper.getMainLooper());
-        exit = false;
         try {
             BLEServiceDiscovery bleDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
-            hotspot = new WifiDirectHotSpot(getApplicationContext(), this);
-            manager = (BluetoothManager) this.getSystemService(BLUETOOTH_SERVICE);
-            btAdapter = manager.getAdapter();
-            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this,this, bleDriver);
+  //          hotspot = new WifiDirectHotSpot(getApplicationContext(), this);
+            BLEServiceDiscovery bleDiscoveryDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
+            BLEAdvertising bleAdvertisingDriver = BLEAdvertising.getInstance(getApplicationContext());
+
+            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver);
             // set ble driver
         } catch (Exception e) {
             e.printStackTrace();
@@ -81,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
                 e.printStackTrace();
             }
         }
-        startHotspot();
+        //startHotspot();
     }
 
     @Override
@@ -196,78 +187,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
         activePeers.remove(s);
     }
 
-    @Override
-    public void startAdvertising(){
-        Log.d(TAG,"StartAdverstising");
-        BLEAdvertising bleAdv = new BLEAdvertising(getApplicationContext());
-        bleAdv.startAdvertising(Datahop.getServiceTag());
-        startGATTServer();
-    }
-
-    @Override
-    public void startGATTServer(){
-
-        Log.d(TAG, "Start server " + hotspot.getNetworkName());
-
-        //stopServer();
-        serverCallback = new GattServerCallback(getApplicationContext(), hotspot, Datahop.getServiceTag());
-        mBluetoothGattServer = manager.openGattServer(getApplicationContext(), serverCallback);
-        serverCallback.setServer(mBluetoothGattServer);
-        if (hotspot.getNetworkName() != null)
-            serverCallback.setNetwork(hotspot.getNetworkName(), hotspot.getPassphrase());
-        if (mBluetoothGattServer == null) {
-            Log.d(TAG, "Unable to create GATT server");
-            return;
-        }
-
-        setupServer();
-    }
-
-    @Override
-    public void startScanning(){
-        Log.d(TAG,"startScanning " + Datahop.getServiceTag());
-        BLEServiceDiscovery bleDiscovery = BLEServiceDiscovery.getInstance(getApplicationContext());
-
-        bleDiscovery.start(Datahop.getServiceTag());
-        bleDiscovery.setListener(this);
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "Stop scan");
-                if (bleDiscovery != null) bleDiscovery.stop();
-                bleDiscovery.tryConnection();
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d(TAG,"Start service");
-                        //bleScan.tryConnection();
-                        if(!exit)startScanning();
-                    }
-                }, btIdleFgTime);
-            }
-        }, scanTime);
-    }
-
-    @Override
-    public void stopAdvertising(){
-        BLEAdvertising bleAdv = BLEAdvertising.getInstance(getApplicationContext());
-        bleAdv.stopAdvertising();
-
-    }
-
-    @Override
-    public void stopGATTServer(){}
-
-    @Override
-    public void stopScanning(){
-        exit = true;
-    }
-
-    @Override
-    public void connect(String var1, String var2){}
-
-    @Override
+    /*@Override
     public void startHotspot(){
 
         if (!hotspot.isConnected()) {
@@ -296,12 +216,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
     }
 
     @Override
-    public void stopHotspot(){}
+    public void stopHotspot(){}*/
+
 
     @Override
     public void setNetwork(String network, String password) {
         Log.d(TAG, "Set network " + network);
-        serverCallback.setNetwork(network, password);
+        //serverCallback.setNetwork(network, password);
     }
 
     @Override
@@ -312,28 +233,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook, B
     @Override
     public void disconnected() {
         //mDataSharingServer.close();
-    }
-
-
-    private void setupServer() {
-
-        ParcelUuid SERVICE_UUID = new ParcelUuid(UUID.nameUUIDFromBytes(Datahop.getServiceTag().getBytes()));
-        BluetoothGattService service = new BluetoothGattService(SERVICE_UUID.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
-
-
-        // Write characteristic
-        int charnum= (int)Datahop.getAdvertisingUUIDNum();
-        for (int i=0;i<charnum;i++){
-            String characteristic = Datahop.getAdvertisingUUID(i);
-            UUID CHARACTERISTIC_UUID = UUID.nameUUIDFromBytes(characteristic.getBytes());
-            Log.d(TAG, "Advertising characteristic " + CHARACTERISTIC_UUID.toString());
-            BluetoothGattCharacteristic writeCharacteristic = new BluetoothGattCharacteristic(
-                    CHARACTERISTIC_UUID,
-                    BluetoothGattCharacteristic.PROPERTY_WRITE,
-                    BluetoothGattCharacteristic.PERMISSION_WRITE);
-            service.addCharacteristic(writeCharacteristic);
-        }
-        mBluetoothGattServer.addService(service);
     }
 
 
