@@ -14,7 +14,7 @@ public class Config
 
 	public static final String meetingId ="DataHop";
 	// How long to scan for Bluetooth LE devices.
-	public static final long bleScanDuration =2000;
+	public static final long bleScanDuration =3000;
 
 	// How long to advertise for Bluetooth LE devices in foreground.
 	public static final long bleAdvertiseForegroundDuration = 15000;

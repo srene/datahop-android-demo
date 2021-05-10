@@ -74,7 +74,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         network = null;
         mServiceUUID =  new ParcelUuid(UUID.nameUUIDFromBytes(parcelUuid.getBytes()));
         this.advertisingInfo = advertisingInfo;
-        Log.d(TAG,"Service uuid:"+mServiceUUID);
+        Log.d(TAG,"Service uuid:"+mServiceUUID+" "+parcelUuid);
 
 
 

@@ -40,7 +40,8 @@ public class BLEAdvertising  implements BleNativeDriver{
 
     private static volatile BLEAdvertising mBleAdvertising;
     private Context context;
-    public BLEAdvertising(Context context){
+
+    private BLEAdvertising(Context context){
 
         manager = (BluetoothManager) context.getSystemService(BLUETOOTH_SERVICE);
         btAdapter = manager.getAdapter();
@@ -82,13 +83,13 @@ public class BLEAdvertising  implements BleNativeDriver{
                 adv.startAdvertising(advertiseSettings, advertiseData, advertiseCallback);
             }
         }
-       // Log.d(TAG, "Name length " + stats.getUserName().getBytes().length + " " + advertiseData);
+        //Log.d(TAG, "Name length " + stats.getUserName().getBytes().length + " " + advertiseData);
         startGATTServer(parcelUuid);
     }
 
     private void startGATTServer(String parcelUuid){
 
-        //Log.d(TAG, "Start server " + hotspot.getNetworkName());
+//        Log.d(TAG, "Start server " + hotspot.getNetworkName());
 
         //stopServer();
         serverCallback = new GattServerCallback(context, parcelUuid,advertisingInfo);
@@ -129,6 +130,7 @@ public class BLEAdvertising  implements BleNativeDriver{
 
     }
 
+    @Override
     public void stop() {
         Log.d(TAG, "Stopping ADV");
         adv.stopAdvertising(advertiseCallback);

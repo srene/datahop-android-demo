@@ -38,9 +38,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import datahop.Datahop;
-import network.datahop.datahopdemo.net.ContentAdvertisement;
-import network.datahop.datahopdemo.net.DiscoveryListener;
-import network.datahop.datahopdemo.net.LinkListener;
 import network.datahop.datahopdemo.net.StatsHandler;
 import network.datahop.datahopdemo.net.Config;
 
@@ -74,27 +71,27 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	private HashMap<UUID,byte[]> advertisingInfo;
     private boolean mScanning;
-	Set<BluetoothDevice> results;
+	private Set<BluetoothDevice> results;
 
 	private boolean started=false;
 	//SettingsPreferences mTimers;
 	private static BluetoothLeScanner mLEScanner;
 
-	boolean mInitialized = false;
-	LinkListener lListener;
+	private boolean mInitialized = false;
+	private BleDiscoveryListener lListener;
 
-	BluetoothDevice device=null;
-	ParcelUuid mServiceUUID;
-	StatsHandler stats;
-	int pendingWrite;
-	boolean sending;
+	private BluetoothDevice device=null;
+	private ParcelUuid mServiceUUID;
+	private StatsHandler stats;
+	private int pendingWrite;
+	private boolean sending;
 
-	Handler mHandler;
+	private Handler mHandler;
 
 	private  boolean exit;
 	//public BLEServiceDiscovery(LinkListener lListener, DiscoveryListener dListener, Context context/*, SettingsPreferences timers*/, StatsHandler stats)
 
-	public BLEServiceDiscovery(Context context)
+	private BLEServiceDiscovery(Context context)
 	{
 
 		this.context = context;
@@ -191,7 +188,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 	public void startScanning(String service_uuid)
 	{
 
-		Log.d(TAG,"Service uuid:"+service_uuid+" "+started);
+		Log.d(TAG,"startScanning Service uuid:"+service_uuid+" "+started);
 		if(mBluetoothAdapter!=null&&!started) {
 			pendingWrite = 0;
 			sending = false;
@@ -221,7 +218,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
     }
 
-    public void setListener(LinkListener lListener){
+    public void setListener(BleDiscoveryListener lListener){
 
 		this.lListener = lListener;
 	}
@@ -235,7 +232,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	private void stopScanning()
 	{
-
+		started=false;
 		try {
 			mLEScanner.stopScan(mScanCallback);
 			mLEScanner.flushPendingScanResults(mScanCallback);
@@ -249,6 +246,8 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 
 	public void scanLeDevice() {
+
+		Log.d(TAG, "Start scan "+mConnectionState+" "+mServiceUUID);
 
 		results.clear();
         mConnectionState=STATE_DISCONNECTED;
@@ -268,7 +267,6 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 		filters.add(scanFilter);
 	//	filters.add(scanFilter2);
 
-		Log.d(TAG, "Start scan "+mConnectionState);
 
 		if(mConnectionState==STATE_DISCONNECTED)
 		{
@@ -296,6 +294,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 //			dListener.onUserDiscovered(new String(result.getScanRecord().getManufacturerSpecificData(0)),result.getDevice().getAddress());
 			//if(device.equals("pixel2"))
 			results.add(result.getDevice());
+			//lListener.peerDiscovered(result.getDevice().toString());
 		}
 
 		@Override
@@ -437,13 +436,13 @@ public class BLEServiceDiscovery implements BleNativeDriver{
         }
 		pendingWrite--;
 		if (Arrays.equals(new byte[]{0x00}, messageBytes)){
-            if(lListener!=null)lListener.linkNetworkSameDiscovered(device.getAddress());
+            if(lListener!=null)lListener.peerDiscoveredSameStatus(device.getAddress());
             if (pendingWrite<=0)
 				disconnect();
             tryConnection();
         }else {
         	Log.d(TAG, "Attempting to connect");
-			lListener.linkNetworkDiscovered(message);
+			lListener.peerDiscoveredDiffStatus(message);
 			disconnect();
 			//started=false;
 			//close();

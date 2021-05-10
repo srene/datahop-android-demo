@@ -25,7 +25,7 @@ import datahop.ConnectionHook;
 import datahop.WifiHook;
 import network.datahop.datahopdemo.net.Config;
 import network.datahop.datahopdemo.net.DiscoveryListener;
-import network.datahop.datahopdemo.net.LinkListener;
+import network.datahop.datahopdemo.net.ble.BleDiscoveryListener;
 import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
 import network.datahop.datahopdemo.net.ble.GattServerCallback;
@@ -34,7 +34,7 @@ import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
 
 import static java.util.UUID.nameUUIDFromBytes;
 
-public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener, LinkListener {
+public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener, BleDiscoveryListener {
 
     private static final String root = ".datahop";
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -237,13 +237,19 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
 
     @Override
-    public void linkNetworkDiscovered(String network) {
-        Log.d(TAG,"linkNetworkDiscovered "+network);
+    public void peerDiscovered(String device) {
+        Datahop.peerDiscovered(device);
+    }
+
+    @Override
+    public void peerDiscoveredDiffStatus(String network) {
+        Datahop.peerDifferentStatusDiscovered(network,null,null);
 
     }
 
     @Override
-    public void linkNetworkSameDiscovered(String device) {
-        Log.d(TAG,"linkNetworkSameDiscovered "+device);
+    public void peerDiscoveredSameStatus(String device) {
+        Datahop.peerSameStatusDiscovered(device,null,null);
+
     }
 }

@@ -6,15 +6,16 @@
  * All rights reserved
  *******************************************************/
 
-package network.datahop.datahopdemo.net;
+package network.datahop.datahopdemo.net.ble;
 
 
-public interface LinkListener
+public interface BleDiscoveryListener
 {
 
-	void linkNetworkDiscovered(String network);
+	void peerDiscovered(String device);
 
+	void peerDiscoveredDiffStatus(String network);
 
-	void linkNetworkSameDiscovered(String device);
+	void peerDiscoveredSameStatus(String device);
 
 }
