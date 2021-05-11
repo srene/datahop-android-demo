@@ -49,53 +49,50 @@ public class GattServerCallback extends BluetoothGattServerCallback {
     public static final String DIRECT_CONNECTION_ACCEPTED = "direct_accept";
     public static final String DIRECT_CONNECTION_REJECTED = "direct_reject";
 
-    String network,password;
-//    WifiDirectHotSpot hotspot;
+    String network, password;
+    //    WifiDirectHotSpot hotspot;
     private Context mContext;
- //   HashMap<UUID,ContentAdvertisement> ca;
+    //   HashMap<UUID,ContentAdvertisement> ca;
     BluetoothGattCharacteristic mCharacteristic;
     //DataHopConnectivityService service;
     ParcelUuid mServiceUUID;
     private static final String TAG = "GattServerCallback";
-  //  StatsHandler stats;
+    //  StatsHandler stats;
     //ContentDatabaseHandler db;
-    private HashMap<UUID,byte[]> advertisingInfo;
+    private HashMap<UUID, byte[]> advertisingInfo;
 
     BroadcastReceiver mBroadcastReceiver;
 
-    public GattServerCallback(Context context, String parcelUuid,HashMap<UUID,byte[]> advertisingInfo){//WifiDirectHotSpot hotspot, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
+    public GattServerCallback(Context context, String parcelUuid, HashMap<UUID, byte[]> advertisingInfo) {//WifiDirectHotSpot hotspot, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
 
         mDevices = new ArrayList<>();
         mClientConfigurations = new HashMap<>();
         mContext = context;
-  //      this.hotspot = hotspot;
-    //    this.ca = ca;
+        //      this.hotspot = hotspot;
+        //    this.ca = ca;
         //db = new ContentDatabaseHandler(context);
         network = null;
-        mServiceUUID =  new ParcelUuid(UUID.nameUUIDFromBytes(parcelUuid.getBytes()));
+        mServiceUUID = new ParcelUuid(UUID.nameUUIDFromBytes(parcelUuid.getBytes()));
         this.advertisingInfo = advertisingInfo;
-        Log.d(TAG,"Service uuid:"+mServiceUUID+" "+parcelUuid);
-
+        Log.d(TAG, "Service uuid:" + mServiceUUID + " " + parcelUuid);
 
 
     }
 
-    public void stop()
-    {
+    public void stop() {
         mGattServer.close();
-        network=password=null;
-        mGattServer=null;
+        network = password = null;
+        mGattServer = null;
     }
-    public void setServer(BluetoothGattServer gattServer)
-    {
+
+    public void setServer(BluetoothGattServer gattServer) {
         mGattServer = gattServer;
     }
 
-    public void setNetwork(String network, String password)
-    {
+    public void setNetwork(String network, String password) {
         this.network = network;
         this.password = password;
-        Log.d(TAG, "Set network "+network+" "+password);
+        Log.d(TAG, "Set network " + network + " " + password);
 
     }
 
@@ -105,12 +102,12 @@ public class GattServerCallback extends BluetoothGattServerCallback {
 
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             mDevices.add(device);
-     //       int con = stats.getBtConnections();
-     //       stats.setBtConnections(++con);
+            //       int con = stats.getBtConnections();
+            //       stats.setBtConnections(++con);
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             mDevices.remove(device);
             mClientConfigurations.remove(device.getAddress());
-            mCharacteristic=null;
+            mCharacteristic = null;
         }
     }
 
@@ -154,16 +151,15 @@ public class GattServerCallback extends BluetoothGattServerCallback {
             groups.add(UUID.nameUUIDFromBytes(character.getBytes()));
             values.put(UUID.nameUUIDFromBytes(character.getBytes()),Datahop.getAdvertisingInfo(character));
         }*/
-        Log.d(TAG,"onCharacteristicWriteRequest");
-        if(BluetoothUtils.matchAnyCharacteristic(characteristic.getUuid(),groups))
-        {
+        Log.d(TAG, "onCharacteristicWriteRequest");
+        if (BluetoothUtils.matchAnyCharacteristic(characteristic.getUuid(), groups)) {
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
-      //      if(ca.get(characteristic.getUuid()).connectFilter(value)&&network!=null) {
+            //      if(ca.get(characteristic.getUuid()).connectFilter(value)&&network!=null) {
             String valueString = new String(value);
             String valueString2 = new String(advertisingInfo.get(characteristic.getUuid()));
-            //Log.d(TAG,"Characteristic check "+characteristic.getUuid().toString()+" "+network+" "+valueString2+" "+valueString+" "+value+" "+values.get(characteristic.getUuid()));
-            if(!valueString.equals(valueString2)&&network!=null) {
-                Log.d(TAG,"Connecting");
+            Log.d(TAG, "Characteristic check " + characteristic.getUuid().toString() + " " + network + " " + valueString2 + " " + valueString);
+            if (!valueString.equals(valueString2)) {
+                Log.d(TAG, "Connecting");
                 /*hotspot.start(new WifiDirectHotSpot.StartStopListener() {
                     public void onSuccess() {
                         Log.d(TAG, "Hotspot started");
@@ -173,17 +169,17 @@ public class GattServerCallback extends BluetoothGattServerCallback {
                         Log.d(TAG, "Hotspot started failed, error code " + reason);
                     }
                 });
-                hotspot.startConnection();*/
+                hotspot.startConnection();
                 mCharacteristic = characteristic;
                 Random rn = new Random();
                 int range = 254 - 2 + 1;
                 int ip =  rn.nextInt(range) + 2;
                 byte[] response = (network+":"+password+":"+Config.ip+"."+String.valueOf(ip)).getBytes();
                 characteristic.setValue(response);
-                notifyCharacteristic(response, characteristic.getUuid());
+                notifyCharacteristic(response, characteristic.getUuid());*/
             } else {
-                Log.d(TAG,"Not Connecting");
-                notifyCharacteristic(new byte[]{0x00}, characteristic.getUuid());
+                Log.d(TAG, "Not Connecting");
+
             }
 
         }
@@ -199,6 +195,16 @@ public class GattServerCallback extends BluetoothGattServerCallback {
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(broadcast);
 
         }*/
+    }
+
+    //@Override
+    public void notifyNetworkInformation(UUID uuid, String info){
+        notifyCharacteristic(info.getBytes(), uuid);
+    }
+
+    //@Override
+    public void notifyEmptyValue(UUID uuid){
+        notifyCharacteristic(new byte[]{0x00}, uuid);
     }
 
     @Override

@@ -8,8 +8,13 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Random;
 
 import datahop.Datahop;
 import datahop.ConnectionHook;
@@ -54,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
                 e.printStackTrace();
             }
         }
+
         requestForPermissions();
         //startHotspot();
     }
@@ -153,6 +159,20 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
             String addrs = Datahop.getAddress();
             final TextView textViewAddrs = this.findViewById(R.id.textview_address);
             textViewAddrs.setText(addrs);
+
+            final Button button = findViewById(R.id.button);
+            button.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    byte[] array = new byte[7]; // length is bounded by 7
+                    new Random().nextBytes(array);
+                    String generatedString = new String(array, Charset.forName("UTF-8"));
+                    final TextView text = findViewById(R.id.textView);
+                    text.setText(generatedString);
+                    Log.d(TAG,"Refresh status "+generatedString);
+                    // Code here executes on main thread after user presses button
+                    Datahop.updateTopicStatus("topic1",generatedString.getBytes());
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }

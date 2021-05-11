@@ -185,6 +185,8 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	@Override
 	public void addAdvertisingInfo(String characteristic, byte[] info){
+		String inf = new String(info);
+		Log.d(TAG,"addAdvertisingInfo "+characteristic+" "+inf);
 		advertisingInfo.put(UUID.nameUUIDFromBytes(characteristic.getBytes()),info);
 	}
 
