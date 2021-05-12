@@ -63,7 +63,9 @@ public class GattServerCallback extends BluetoothGattServerCallback {
 
     BroadcastReceiver mBroadcastReceiver;
 
-    public GattServerCallback(Context context, String parcelUuid, HashMap<UUID, byte[]> advertisingInfo) {//WifiDirectHotSpot hotspot, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
+    DiscoveryListener listener;
+
+    public GattServerCallback(Context context, String parcelUuid, HashMap<UUID, byte[]> advertisingInfo, DiscoveryListener listener) {//WifiDirectHotSpot hotspot, HashMap<UUID,ContentAdvertisement> ca, ParcelUuid service_uuid,StatsHandler stats,List<String> groups) {
 
         mDevices = new ArrayList<>();
         mClientConfigurations = new HashMap<>();
@@ -75,7 +77,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         mServiceUUID = new ParcelUuid(UUID.nameUUIDFromBytes(parcelUuid.getBytes()));
         this.advertisingInfo = advertisingInfo;
         Log.d(TAG, "Service uuid:" + mServiceUUID + " " + parcelUuid);
-
+        this.listener = listener;
 
     }
 
@@ -160,6 +162,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
             Log.d(TAG, "Characteristic check " + characteristic.getUuid().toString() + " " + network + " " + valueString2 + " " + valueString);
             if (!valueString.equals(valueString2)) {
                 Log.d(TAG, "Connecting");
+                listener.differentStatusDiscovered();
                 /*hotspot.start(new WifiDirectHotSpot.StartStopListener() {
                     public void onSuccess() {
                         Log.d(TAG, "Hotspot started");
@@ -179,7 +182,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
                 notifyCharacteristic(response, characteristic.getUuid());*/
             } else {
                 Log.d(TAG, "Not Connecting");
-
+                listener.sameStatusDiscovered();
             }
 
         }
@@ -197,15 +200,6 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         }*/
     }
 
-    //@Override
-    public void notifyNetworkInformation(UUID uuid, String info){
-        notifyCharacteristic(info.getBytes(), uuid);
-    }
-
-    //@Override
-    public void notifyEmptyValue(UUID uuid){
-        notifyCharacteristic(new byte[]{0x00}, uuid);
-    }
 
     @Override
     public void onDescriptorReadRequest(BluetoothDevice device,
@@ -237,7 +231,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         super.onNotificationSent(device, status);
     }
 
-    private void notifyCharacteristic(byte[] value, UUID uuid) {
+    public void notifyCharacteristic(byte[] value, UUID uuid) {
         BluetoothGattService service = mGattServer.getService(mServiceUUID.getUuid());
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(uuid);
 

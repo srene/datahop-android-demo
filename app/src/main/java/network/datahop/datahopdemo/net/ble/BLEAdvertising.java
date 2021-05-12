@@ -14,7 +14,7 @@ import android.content.Intent;
 import android.os.ParcelUuid;
 import android.util.Log;
 
-import datahop.BleNativeDriver;
+import datahop.BleAdvertisingDriver;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -22,12 +22,13 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import datahop.Datahop;
+import datahop.BleAdvNotifier;
 
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_MODE_BALANCED;
 import static android.bluetooth.le.AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM;
 import static android.content.Context.BLUETOOTH_SERVICE;
 
-public class BLEAdvertising  implements BleNativeDriver{
+public class BLEAdvertising  implements BleAdvertisingDriver{
 
     private static final String TAG = BLEAdvertising.class.getSimpleName();
     private BluetoothLeAdvertiser adv;
@@ -40,6 +41,8 @@ public class BLEAdvertising  implements BleNativeDriver{
 
     private static volatile BLEAdvertising mBleAdvertising;
     private Context context;
+
+    private static BleAdvNotifier notifier;
 
     private BLEAdvertising(Context context){
 
@@ -61,6 +64,8 @@ public class BLEAdvertising  implements BleNativeDriver{
 
     public void start(String parcelUuid) {
         Log.d(TAG, "Starting ADV, Tx power " + parcelUuid.toString());
+        this.notifier = Datahop.getBleAdvNotifier();
+
         if (btAdapter != null) {
             if (btAdapter.isMultipleAdvertisementSupported()) {
                 Log.d(TAG, "Starting ADV2, Tx power " + parcelUuid.toString());
@@ -92,7 +97,17 @@ public class BLEAdvertising  implements BleNativeDriver{
 //        Log.d(TAG, "Start server " + hotspot.getNetworkName());
 
         //stopServer();
-        serverCallback = new GattServerCallback(context, parcelUuid,advertisingInfo);
+        serverCallback = new GattServerCallback(context, parcelUuid, advertisingInfo, new DiscoveryListener() {
+            @Override
+            public void sameStatusDiscovered() {
+                notifier.sameStatusDiscovered();
+            }
+
+            @Override
+            public void differentStatusDiscovered() {
+                notifier.differentStatusDiscovered();
+            }
+        });
         mBluetoothGattServer = manager.openGattServer(context, serverCallback);
         serverCallback.setServer(mBluetoothGattServer);
 
@@ -139,6 +154,18 @@ public class BLEAdvertising  implements BleNativeDriver{
     @Override
     public void addAdvertisingInfo(String characteristic, byte[] info){
         advertisingInfo.put(UUID.nameUUIDFromBytes(characteristic.getBytes()),info);
+    }
+
+    @Override
+    public void notifyNetworkInformation(String uuid, String info){
+        UUID characteristic= UUID.nameUUIDFromBytes(uuid.getBytes());
+        serverCallback.notifyCharacteristic(info.getBytes(), characteristic);
+    }
+
+    @Override
+    public void notifyEmptyValue(String uuid){
+        UUID characteristic= UUID.nameUUIDFromBytes(uuid.getBytes());
+        serverCallback.notifyCharacteristic(new byte[]{0x00}, characteristic);
     }
 
 

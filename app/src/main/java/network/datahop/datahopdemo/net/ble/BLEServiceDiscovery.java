@@ -44,10 +44,10 @@ import network.datahop.datahopdemo.net.Config;
 import static android.content.Context.BLUETOOTH_SERVICE;
 import static java.lang.Thread.sleep;
 
-import datahop.BleNativeDriver;
-import datahop.BleNotifier;
+import datahop.BleDiscoveryDriver;
+import datahop.BleDiscNotifier;
 
-public class BLEServiceDiscovery implements BleNativeDriver{
+public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 	private static final String TAG = "BLEServiceDiscovery";
 
@@ -87,7 +87,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 
 	private Handler mHandler;
 
-	private static BleNotifier notifier;
+	private static BleDiscNotifier notifier;
 	private  boolean exit;
 	//public BLEServiceDiscovery(LinkListener lListener, DiscoveryListener dListener, Context context/*, SettingsPreferences timers*/, StatsHandler stats)
 
@@ -147,7 +147,7 @@ public class BLEServiceDiscovery implements BleNativeDriver{
 	//public void startScanning(){
 		//Log.d(TAG,"startScanning " + Datahop.getServiceTag());
 		//BLEServiceDiscovery bleDiscovery = BLEServiceDiscovery.getInstance(getApplicationContext());
-		this.notifier = Datahop.getBleNotifier();
+		this.notifier = Datahop.getBleDiscNotifier();
 		if (notifier == null) {
 			Log.e(TAG, "notifier not found");
 			return ;
