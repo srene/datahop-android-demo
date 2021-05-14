@@ -157,9 +157,10 @@ public class BLEAdvertising  implements BleAdvertisingDriver{
     }
 
     @Override
-    public void notifyNetworkInformation(String uuid, String info){
+    public void notifyNetworkInformation(String uuid, String network, String password, String info){
         UUID characteristic= UUID.nameUUIDFromBytes(uuid.getBytes());
-        serverCallback.notifyCharacteristic(info.getBytes(), characteristic);
+        String msg = network+":"+password+":"+info;
+        serverCallback.notifyCharacteristic(msg.getBytes(), characteristic);
     }
 
     @Override

@@ -21,6 +21,8 @@ import datahop.ConnectionHook;
 import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
 import network.datahop.datahopdemo.net.wifi.HotspotListener;
+import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
+import network.datahop.datahopdemo.net.wifi.WifiLink;
 
 public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener {
 
@@ -45,7 +47,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
             BLEAdvertising bleAdvertisingDriver = BLEAdvertising.getInstance(getApplicationContext());
 
-            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver);
+            WifiDirectHotSpot hotspot = WifiDirectHotSpot.getInstance(getApplicationContext());
+
+            WifiLink connection = WifiLink.getInstance(getApplicationContext());
+
+            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver,connection,hotspot);
             // set ble driver
         } catch (Exception e) {
             e.printStackTrace();

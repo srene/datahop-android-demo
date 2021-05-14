@@ -31,13 +31,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import network.datahop.datahopdemo.net.Config;
 import network.datahop.datahopdemo.net.StatsHandler;
 
 
+import datahop.WifiConnection;
+import datahop.WifiConnectionNotifier;
 /**
  * Created by srenevic on 03/08/17.
  */
-public class WifiLink  {
+public class WifiLink  implements WifiConnection {
 
 
     static final public int ConectionStateNONE = 0;
@@ -72,35 +75,49 @@ public class WifiLink  {
 
     Date started;
 
-    String userId;
+    //String userId;
 
     //DataHopBackend backend;
 
     long waitingTime;
 
-public WifiLink(Context context, WifiLinkListener listener, StatsHandler stats,/* DataHopBackend backend,*/long waitingTime)
+    private static volatile WifiLink mWifiLink;
+
+    private static WifiConnectionNotifier notifier;
+
+    public WifiLink(Context context)
    {
 
         this.context = context;
-        this.listener = listener;
+     //   this.listener = listener;
         filter = new IntentFilter();
         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         receiver = new WiFiConnectionReceiver();
         //WIFI connection
         this.wifiManager = (WifiManager)this.context.getSystemService(Context.WIFI_SERVICE);
         handler = new Handler();
-        this.stats = stats;
+    //    this.stats = stats;
         //this.timers = timers;
         //this.backend = backend;
-        this.waitingTime = waitingTime;
+        this.waitingTime = Config.wifiConnectionWaitingTime;
 
     }
 
-    public void connect(String SSID, String password,String ip,String userId){
+    // Singleton method
+    public static synchronized WifiLink getInstance(Context appContext) {
+        if (mWifiLink == null) {
+            mWifiLink = new WifiLink(appContext);
+            // initDriver();
+        }
+        return mWifiLink;
+    }
+
+    public void connect(String SSID, String password,String ip){
+    //    public void connect(String SSID, String password,String ip,String userId){
 
         if(!connected&&(mConectionState==ConectionStateNONE||mConectionState==ConectionStateDisconnected)) {
             started = new Date();
-            this.userId = userId;
+            //this.userId = userId;
             this.wifiConfig = new WifiConfiguration();
             this.wifiConfig.SSID = String.format("\"%s\"", SSID);
             this.wifiConfig.preSharedKey = String.format("\"%s\"", password);
@@ -151,7 +168,7 @@ public WifiLink(Context context, WifiLinkListener listener, StatsHandler stats,/
 
             holdWifiLock();
             handler.removeCallbacksAndMessages(null);
-            final String user = userId;
+            //final String user = userId;
             handler.postDelayed(timeout,waitingTime);
             //backend.connectionStarted(started);
 

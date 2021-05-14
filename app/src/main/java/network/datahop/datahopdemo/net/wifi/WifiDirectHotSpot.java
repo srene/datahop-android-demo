@@ -27,17 +27,21 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.Collection;
 
+import datahop.Datahop;
 import network.datahop.datahopdemo.net.Config;
 import network.datahop.datahopdemo.net.StatsHandler;
+import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 
 import static android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION;
 import static android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION;
 
 
+import datahop.WifiHotspotNotifier;
+import datahop.WifiHotspot;
 /**
  * Created by srenevic on 03/08/17.
  */
-public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener,GroupInfoListener {
+public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener,GroupInfoListener, WifiHotspot{
 
     WifiDirectHotSpot that = this;
     Context context;
@@ -61,15 +65,19 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
 
     private boolean connected=false;
 
-    Handler handler;
+    //Handler handler;
 
-    Handler broadcastHandler;
+    //Handler broadcastHandler;
 
    // SettingsPreferences timers;
 
-    HotspotListener nListener;
+    //HotspotListener nListener;
 
     //JobParameters params;
+
+    private static volatile WifiDirectHotSpot mWifiHotspot;
+
+    private static WifiHotspotNotifier notifier;
 
     /** Interface for callback invocation on an application action */
     public interface StartStopListener {
@@ -79,20 +87,33 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         public void onFailure(int reason);
     }
 
-    public WifiDirectHotSpot(Context Context, HotspotListener nListener)//, StatsHandler stats/*, SettingsPreferences timers, JobParameters params*/)
+
+
+    public WifiDirectHotSpot(Context Context)//, StatsHandler stats/*, SettingsPreferences timers, JobParameters params*/)
     {
         this.context = Context;
   //      this.stats = stats;
-        handler = new Handler();
-        broadcastHandler = new Handler();
+//        handler = new Handler();
+//        broadcastHandler = new Handler();
         //this.timers = timers;
         started = false;
-        this.nListener = nListener;
+  //      this.nListener = nListener;
         //this.params = params;
     }
 
-    public void start(StartStopListener listener){
+    // Singleton method
+    public static synchronized WifiDirectHotSpot getInstance(Context appContext) {
+        if (mWifiHotspot == null) {
+            mWifiHotspot = new WifiDirectHotSpot(appContext);
+            // initDriver();
+        }
+        return mWifiHotspot;
+    }
+
+    public void start(){
         Log.d(TAG,"Trying to start");
+        this.notifier = Datahop.getWifiHostpotNotifier();
+
         if(!started) {
             Log.d(TAG,"Start");
             started=true;
@@ -118,12 +139,14 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
                 p2p.createGroup(channel, new WifiP2pManager.ActionListener() {
                     public void onSuccess() {
                         Log.d(TAG, "Creating Local Group ");
-                        listener.onSuccess();
+                        //listener.onSuccess();
+                        notifier.onSuccess();
+
                     }
 
                     public void onFailure(int reason) {
                         Log.d(TAG, "Local Group failed, error code " + reason);
-                        listener.onFailure(reason);
+                        notifier.onFailure(reason);
                     }
                 });
             }
@@ -139,22 +162,23 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
                         .putExtra("password", mPassphrase);
                 context.sendBroadcast(broadcast);
             }*/
-            nListener.setNetwork(mNetworkName,mPassphrase);
+            //nListener.setNetwork(mNetworkName,mPassphrase);
+            notifier.networkInfo(mNetworkName,mPassphrase);
         }
     }
 
-    public void stop(StartStopListener listener) {
+    public void stop() {
         if(started)
         {
             Log.d(TAG,"Stop");
   //          stats.setHsSSID("");
-            broadcastHandler.removeCallbacksAndMessages(null);
-            handler.removeCallbacksAndMessages(null);
-            this.context.unregisterReceiver(receiver);
-            removeGroup(listener);
+            //broadcastHandler.removeCallbacksAndMessages(null);
+            //handler.removeCallbacksAndMessages(null);
+            //this.context.unregisterReceiver(receiver);
+            removeGroup(null);
             started=false;
         } else {
-            listener.onSuccess();
+            //listener.onSuccess();
         }
 
     }
@@ -189,7 +213,7 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         return mPassphrase;
     }
 
-    public void startConnection()
+    /*public void startConnection()
     {
         Intent broadcast = new Intent(Config.STOP_DIS_BLUETOOTH);
         LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);
@@ -202,7 +226,8 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
                 }
             }
         }, Config.wifiConnectionWaitingTime);
-    }
+    }*/
+
     @Override
     public void onChannelDisconnected() {
         // see how we could avoid looping
@@ -227,18 +252,18 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
                 Log.d(TAG,"Client " + numm +" connect");
                 connected=true;
                 //service.setServer();
-                broadcastHandler.removeCallbacksAndMessages(null);
-                nListener.connected();
+                //broadcastHandler.removeCallbacksAndMessages(null);
+                //nListener.connected();
                 //Intent broadcast = new Intent(DiscoveryService.STOP_DIS_BLUETOOTH);
                 //LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);
             }
             else if(numm==0&connected){
                 Log.d(TAG,"Client " + numm +" disconnect");
                 connected=false;
-                nListener.disconnected();
+                //nListener.disconnected();
                 Intent broadcast = new Intent(Config.START_DIS_BLUETOOTH);
                 LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);
-                stop(null);
+                stop();
                 //mod service.stopHttpServer();
                 //service.jobFinished(params,false);
                 //Start();
@@ -260,7 +285,8 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
                         .putExtra("name", mNetworkName)
                         .putExtra("password", mPassphrase);
                 context.sendBroadcast(broadcast);*/
-                nListener.setNetwork(mNetworkName,mPassphrase);
+                //nListener.setNetwork(mNetworkName,mPassphrase);
+                notifier.networkInfo(mNetworkName,mPassphrase);
             }
 
         } catch(Exception e) {
