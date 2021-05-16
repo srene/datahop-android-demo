@@ -45,9 +45,6 @@ public class GattServerCallback extends BluetoothGattServerCallback {
     private BluetoothGattServer mGattServer;
     private List<BluetoothDevice> mDevices;
     private Map<String, byte[]> mClientConfigurations;
-    public static final String DIRECT_CONNECTION = "direct";
-    public static final String DIRECT_CONNECTION_ACCEPTED = "direct_accept";
-    public static final String DIRECT_CONNECTION_REJECTED = "direct_reject";
 
     String network, password;
     //    WifiDirectHotSpot hotspot;
@@ -91,12 +88,6 @@ public class GattServerCallback extends BluetoothGattServerCallback {
         mGattServer = gattServer;
     }
 
-    public void setNetwork(String network, String password) {
-        this.network = network;
-        this.password = password;
-        Log.d(TAG, "Set network " + network + " " + password);
-
-    }
 
     @Override
     public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
@@ -146,13 +137,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
 
         List<UUID> groups = new ArrayList<>();
         groups.addAll(advertisingInfo.keySet());
-        /*long num = Datahop.getAdvertisingUUIDNum();
-        HashMap<UUID,byte[]> values = new HashMap<>();
-        for(int i=0;i<num;i++) {
-            String character = Datahop.getAdvertisingUUID(i);
-            groups.add(UUID.nameUUIDFromBytes(character.getBytes()));
-            values.put(UUID.nameUUIDFromBytes(character.getBytes()),Datahop.getAdvertisingInfo(character));
-        }*/
+
         Log.d(TAG, "onCharacteristicWriteRequest");
         if (BluetoothUtils.matchAnyCharacteristic(characteristic.getUuid(), groups)) {
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
@@ -262,10 +247,10 @@ public class GattServerCallback extends BluetoothGattServerCallback {
                 && (clientConfiguration[1] & notificationEnabled[1]) == notificationEnabled[1];
     }
 
-    public static IntentFilter getIntentFilter() {
+    /*public static IntentFilter getIntentFilter() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(DIRECT_CONNECTION_ACCEPTED);
         filter.addAction(DIRECT_CONNECTION_REJECTED);
         return filter;
-    }
+    }*/
 }

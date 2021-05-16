@@ -149,6 +149,7 @@ public class BLEAdvertising  implements BleAdvertisingDriver{
     public void stop() {
         Log.d(TAG, "Stopping ADV");
         adv.stopAdvertising(advertiseCallback);
+        serverCallback.stop();
     }
 
     @Override

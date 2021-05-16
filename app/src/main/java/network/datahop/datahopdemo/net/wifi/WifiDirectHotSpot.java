@@ -28,6 +28,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.util.Collection;
 
 import datahop.Datahop;
+import datahop.WifiConnectionNotifier;
 import network.datahop.datahopdemo.net.Config;
 import network.datahop.datahopdemo.net.StatsHandler;
 import network.datahop.datahopdemo.net.ble.BLEAdvertising;
@@ -57,23 +58,11 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
     private BroadcastReceiver receiver;
     private IntentFilter filter;
 
- //   private StatsHandler stats;
-
     public static final String TAG = "WifiDirectHotSpot";
 
     boolean started;
 
-    private boolean connected=false;
-
-    //Handler handler;
-
-    //Handler broadcastHandler;
-
-   // SettingsPreferences timers;
-
-    //HotspotListener nListener;
-
-    //JobParameters params;
+    //private boolean connected=false;
 
     private static volatile WifiDirectHotSpot mWifiHotspot;
 
@@ -92,13 +81,8 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
     public WifiDirectHotSpot(Context Context)//, StatsHandler stats/*, SettingsPreferences timers, JobParameters params*/)
     {
         this.context = Context;
-  //      this.stats = stats;
-//        handler = new Handler();
-//        broadcastHandler = new Handler();
-        //this.timers = timers;
         started = false;
-  //      this.nListener = nListener;
-        //this.params = params;
+
     }
 
     // Singleton method
@@ -110,9 +94,13 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         return mWifiHotspot;
     }
 
+    public void setNotifier(WifiHotspotNotifier notifier){
+        this.notifier = notifier;
+    }
+
     public void start(){
         Log.d(TAG,"Trying to start");
-        this.notifier = Datahop.getWifiHostpotNotifier();
+        //this.notifier = Datahop.getWifiHostpotNotifier();
 
         if(!started) {
             Log.d(TAG,"Start");
@@ -125,45 +113,36 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
             } else {
 
                 channel = p2p.initialize(context, context.getMainLooper(), this);
-                //setWifiChannel();
                 receiver = new AccessPointReceiver();
 
                 filter = new IntentFilter();
                 filter.addAction(WIFI_P2P_STATE_CHANGED_ACTION);
                 filter.addAction(WIFI_P2P_CONNECTION_CHANGED_ACTION);
-
                 try{
                     this.context.registerReceiver(receiver, filter);
-                }catch (Exception e){Log.d(TAG,"leaked register");}
+                }catch (Exception e){
+                    Log.d(TAG,"leaked register");
+                }
 
                 p2p.createGroup(channel, new WifiP2pManager.ActionListener() {
                     public void onSuccess() {
                         Log.d(TAG, "Creating Local Group ");
                         //listener.onSuccess();
-                        notifier.onSuccess();
+                        if(notifier!=null)notifier.onSuccess();
 
                     }
 
                     public void onFailure(int reason) {
                         Log.d(TAG, "Local Group failed, error code " + reason);
-                        notifier.onFailure(reason);
+                        if(notifier!=null)notifier.onFailure(reason);
                     }
                 });
             }
 
         } else {
             Log.d(TAG,"Trying to set network");
-            /*if(mNetworkName!=null&&mPassphrase!=null)
-            {
-                String action = NETWORK_READY;
-                Log.d(TAG,"Set network");
-                Intent broadcast = new Intent(action)
-                        .putExtra("name", mNetworkName)
-                        .putExtra("password", mPassphrase);
-                context.sendBroadcast(broadcast);
-            }*/
-            //nListener.setNetwork(mNetworkName,mPassphrase);
-            notifier.networkInfo(mNetworkName,mPassphrase);
+
+            if(notifier!=null)notifier.networkInfo(mNetworkName,mPassphrase);
         }
     }
 
@@ -171,10 +150,6 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         if(started)
         {
             Log.d(TAG,"Stop");
-  //          stats.setHsSSID("");
-            //broadcastHandler.removeCallbacksAndMessages(null);
-            //handler.removeCallbacksAndMessages(null);
-            //this.context.unregisterReceiver(receiver);
             removeGroup(null);
             started=false;
         } else {
@@ -183,24 +158,24 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
 
     }
 
-    public boolean isRunning()
+    /*public boolean isRunning()
     {
         return started;
     }
 
-    public boolean isConnected() {return connected;}
+    public boolean isConnected() {return connected;}*/
 
     public void removeGroup(StartStopListener listener) {
         Log.d(TAG,"removegroup");
         p2p.removeGroup(channel,new WifiP2pManager.ActionListener() {
             public void onSuccess() {
                 Log.d(TAG,"Cleared Local Group ");
-                if(listener!=null)listener.onSuccess();
+                if(notifier!=null)notifier.stopOnSuccess();
             }
 
             public void onFailure(int reason) {
                 Log.d(TAG,"Clearing Local Group failed, error code " + reason);
-                if(listener!=null)listener.onFailure(reason);
+                if(notifier!=null)notifier.stopOnFailure(reason);
             }
         });
     }
@@ -239,38 +214,26 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
     public void onGroupInfoAvailable(WifiP2pGroup group) {
 
         try {
-            Collection<WifiP2pDevice> devlist = group.getClientList();
+            //Collection<WifiP2pDevice> devlist = group.getClientList();
    //         stats.setHsSSID(group.getNetworkName());
-
-            int numm = 0;
+            notifier.clientsConnected(group.getClientList().size());
+            /*int numm = 0;
             for (WifiP2pDevice peer : group.getClientList()) {
                 numm++;
                 Log.d(TAG,"Client " + numm + " : "  + peer.deviceName + " " + peer.deviceAddress);
             }
-   //         stats.setHsClients(numm);
+
             if(numm>0&!connected){
                 Log.d(TAG,"Client " + numm +" connect");
                 connected=true;
-                //service.setServer();
-                //broadcastHandler.removeCallbacksAndMessages(null);
-                //nListener.connected();
-                //Intent broadcast = new Intent(DiscoveryService.STOP_DIS_BLUETOOTH);
-                //LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);
+
             }
             else if(numm==0&connected){
                 Log.d(TAG,"Client " + numm +" disconnect");
                 connected=false;
-                //nListener.disconnected();
-                Intent broadcast = new Intent(Config.START_DIS_BLUETOOTH);
-                LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);
-                stop();
-                //mod service.stopHttpServer();
-                //service.jobFinished(params,false);
-                //Start();
-                //service.serviceStopUbiCDN();
-                //service.serviceStartUbiCDN();
+                //stop();
 
-            }
+            }*/
 
             if(mNetworkName.equals(group.getNetworkName()) && mPassphrase.equals(group.getPassphrase())){
                 Log.d(TAG,"Already have local service for " + mNetworkName + " ," + mPassphrase);
@@ -279,13 +242,6 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
                 mNetworkName = group.getNetworkName();
                 mPassphrase = group.getPassphrase();
 
-                /*String action = NETWORK_READY;
-
-                Intent broadcast = new Intent(action)
-                        .putExtra("name", mNetworkName)
-                        .putExtra("password", mPassphrase);
-                context.sendBroadcast(broadcast);*/
-                //nListener.setNetwork(mNetworkName,mPassphrase);
                 notifier.networkInfo(mNetworkName,mPassphrase);
             }
 

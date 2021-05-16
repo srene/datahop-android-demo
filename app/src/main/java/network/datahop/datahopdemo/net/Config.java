@@ -29,7 +29,7 @@ public class Config
 	public static final long statusRefrestIfFailed = 500;
 
 	//How long to wait for a connection to be successful
-	public static final long wifiConnectionWaitingTime = 30000;
+	public static final long wifiConnectionWaitingTime = 60000;
 
 	//How long to wait for another source device
 	public static final long networkWaitingTime = 2000;

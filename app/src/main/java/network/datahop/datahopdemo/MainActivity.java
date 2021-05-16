@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.d("-----Version :", Datahop.version());
+        //Log.d("-----Version :", Datahop.version());
         try {
             BLEServiceDiscovery bleDiscoveryDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
 
@@ -51,12 +51,15 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
             WifiLink connection = WifiLink.getInstance(getApplicationContext());
 
-            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver,connection,hotspot);
+            //Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver,connection,hotspot);
             // set ble driver
+
+            connection.connect("DIRECT-4Z-SM-N976B","oFTWAavS","192.168.49.53");
+            //hotspot.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d("Node Id", Datahop.getID());
+        /*Log.d("Node Id", Datahop.getID());
         Log.d("Node Status onCreate", String.valueOf(Datahop.isNodeOnline()));
         if (!Datahop.isNodeOnline()) {
             try {
@@ -64,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
+        }*/
 
         requestForPermissions();
         //startHotspot();
@@ -156,15 +159,15 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
     public void onStart() {
         super.onStart();
-        Log.d("Node Status onStart", String.valueOf(Datahop.isNodeOnline()));
+        //Log.d("Node Status onStart", String.valueOf(Datahop.isNodeOnline()));
         try {
-            String Id = Datahop.getID();
+            /*String Id = Datahop.getID();
             final TextView textViewID = this.findViewById(R.id.textview_id);
             textViewID.setText(Id);
 
             String addrs = Datahop.getAddress();
             final TextView textViewAddrs = this.findViewById(R.id.textview_address);
-            textViewAddrs.setText(addrs);
+            textViewAddrs.setText(addrs);*/
 
             final Button button = findViewById(R.id.button);
             button.setOnClickListener(new View.OnClickListener() {
@@ -176,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
                     text.setText(generatedString);
                     Log.d(TAG,"Refresh status "+generatedString);
                     // Code here executes on main thread after user presses button
-                    Datahop.updateTopicStatus("topic1",generatedString.getBytes());
+                    //Datahop.updateTopicStatus("topic1",generatedString.getBytes());
                 }
             });
         } catch (Exception e) {

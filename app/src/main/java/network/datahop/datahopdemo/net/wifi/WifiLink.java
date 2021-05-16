@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import datahop.Datahop;
 import network.datahop.datahopdemo.net.Config;
 import network.datahop.datahopdemo.net.StatsHandler;
 
@@ -55,7 +56,7 @@ public class WifiLink  implements WifiConnection {
 
     private boolean hadConnection = false;
 
-    StatsHandler stats;
+    //StatsHandler stats;
     WifiLinkListener listener;
     WifiManager wifiManager = null;
     WifiConfiguration wifiConfig = null;
@@ -100,7 +101,6 @@ public class WifiLink  implements WifiConnection {
         //this.timers = timers;
         //this.backend = backend;
         this.waitingTime = Config.wifiConnectionWaitingTime;
-
     }
 
     // Singleton method
@@ -112,9 +112,15 @@ public class WifiLink  implements WifiConnection {
         return mWifiLink;
     }
 
+    public void setNotifier(WifiConnectionNotifier notifier){
+        this.notifier = notifier;
+    }
+
     public void connect(String SSID, String password,String ip){
     //    public void connect(String SSID, String password,String ip,String userId){
-
+        //
+        disconnect();
+        Log.d(TAG,"Start connection to ssid "+SSID+" Pass:"+password);
         if(!connected&&(mConectionState==ConectionStateNONE||mConectionState==ConectionStateDisconnected)) {
             started = new Date();
             //this.userId = userId;
@@ -124,11 +130,13 @@ public class WifiLink  implements WifiConnection {
             //Log.d(TAG, "WE HAVE REACHED HERE");
             ssid = this.wifiManager.getConnectionInfo().getSSID();
             this.wifiConfig.priority = 10000;
-            Log.d(TAG,"Connected to "+ssid+" "+ip);
             List<WifiConfiguration> wifis = this.wifiManager.getConfiguredNetworks();
             boolean result;
             connected = true;
             hadConnection=false;
+
+            Log.d(TAG,"Connected to "+ssid+" "+this.wifiManager+" "+wifis.size());
+
             if(wifis!=null) {
                 for (WifiConfiguration wifi : wifis) {
                     if(wifi.SSID.startsWith("DIRECT-"))
@@ -140,7 +148,7 @@ public class WifiLink  implements WifiConnection {
 
                 }
             }
-            if (this.wifiConfig  != null)
+            /*if (this.wifiConfig  != null)
             {
                 try
                 {
@@ -153,7 +161,7 @@ public class WifiLink  implements WifiConnection {
                 {
                     e.printStackTrace();
                 }
-            }
+            }*/
 
 
             //this.wifiManager.startScan();
@@ -162,8 +170,8 @@ public class WifiLink  implements WifiConnection {
             this.netId = this.wifiManager.addNetwork(this.wifiConfig);
             this.wifiManager.disconnect();
             this.wifiManager.enableNetwork(this.netId, true);
-            boolean success = this.wifiManager.reconnect();
-            stats.setWStatus("Connecting...");
+            this.wifiManager.reconnect();
+//            stats.setWStatus("Connecting...");
 
 
             holdWifiLock();
@@ -198,7 +206,8 @@ public class WifiLink  implements WifiConnection {
             mConectionState=ConectionStateNONE;
             mPreviousState=ConectionStateNONE;
             Log.d(TAG,"Report disconnection");
-            listener.wifiLinkDisconnected();
+            if(notifier!=null)notifier.onFailure(1);
+            // listener.wifiLinkDisconnected();
 
         }
 
@@ -323,10 +332,7 @@ public class WifiLink  implements WifiConnection {
                 Log.d(TAG, "timeout");
                 //backend.connectionFailed(started, new Date());
                 disconnect();
-                stats.setWStatus("Disconnected");
-                int conn = stats.getConnections();
-                stats.setConnectionsFailed(++conn);
-                listener.timeout();
+
             }
         }
     };
@@ -392,13 +398,15 @@ public class WifiLink  implements WifiConnection {
                             String ipAddress = InetAddress.getByAddress(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(ip).array()).getHostAddress();
                             String gwAddress = InetAddress.getByAddress(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(gateway).array()).getHostAddress();
                             Log.d(TAG, "IP  " + ipAddress + " " + gwAddress);
-                            stats.setWStatus("Connected");
-                            listener.wifiLinkConnected(gwAddress);
+                            //stats.setWStatus("Connected");
+                            //listener.wifiLinkConnected(gwAddress);
+                            if(notifier!=null)notifier.onSuccess();
                         }catch (UnknownHostException e){}
                        // backend.connectionCompleted(started,new Date(),wiffo.getRssi(),wiffo.getLinkSpeed(),wiffo.getFrequency());
                     } else if(!wiffo.getSSID().equals(wifiConfig.SSID)) {
                         Log.d(TAG, "Not connected");
-                        listener.wifiLinkDisconnected();
+                        //listener.wifiLinkDisconnected();
+                        if(notifier!=null)notifier.onFailure(0);
                     }
 
                 }

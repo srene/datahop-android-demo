@@ -95,35 +95,10 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 	{
 
 		this.context = context;
-		//mHandler = new Handler();
-        //sHandler = new Handler();
 
 		mHandler = new Handler(Looper.getMainLooper());
 		advertisingInfo = new HashMap();
 		this.results = new HashSet<BluetoothDevice>();
-
-		//mTimers = timers;
-		//this.stats = stats;
-		//db = new ContentDatabaseHandler(context);
-		//mServiceUUID = service_uuid;
-        /*mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.d(TAG,"Broadcast received "+intent);
-                switch (intent.getAction()) {
-                    case BLESERVER_STATE:
-
-                        int serverstate = intent.getIntExtra("state",0);
-                        if(serverstate==BluetoothProfile.STATE_CONNECTED){
-                        	mLEScanner.stopScan(mScanCallback);
-                        	//stop();
-                        	//disconnect();
-						}
-                        break;
-
-				}
-            }
-        };*/
 
     }
 
@@ -144,9 +119,6 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 	@Override
 	public void start(String service_uuid) {
-	//public void startScanning(){
-		//Log.d(TAG,"startScanning " + Datahop.getServiceTag());
-		//BLEServiceDiscovery bleDiscovery = BLEServiceDiscovery.getInstance(getApplicationContext());
 		this.notifier = Datahop.getBleDiscNotifier();
 		if (notifier == null) {
 			Log.e(TAG, "notifier not found");
@@ -154,7 +126,6 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 		}
 		exit=false;
 		startScanning(service_uuid);
-		//bleDiscovery.setListener(this);
 		Handler handler = new Handler(Looper.getMainLooper());
 		handler.postDelayed(new Runnable() {
 			@Override
@@ -165,9 +136,11 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 				mHandler.postDelayed(new Runnable() {
 					@Override
 					public void run() {
-						Log.d(TAG,"Start service");
 						//bleScan.tryConnection();
-						if(!exit)start(service_uuid);
+						if(!exit){
+							Log.d(TAG,"Start service");
+							start(service_uuid);
+						}
 					}
 				}, btIdleFgTime);
 			}
@@ -179,6 +152,7 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 	@Override
 	public void stop()
 	{
+		Log.d(TAG,"Stop");
 		exit=true;
 		stopScanning();
 	}
@@ -190,8 +164,6 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 		advertisingInfo.put(UUID.nameUUIDFromBytes(characteristic.getBytes()),info);
 	}
 
-	//public boolean start(ParcelUuid service_uuid)
-	//public void start(String service_uuid)
 	public void startScanning(String service_uuid)
 	{
 
@@ -213,14 +185,7 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 			}
 
-			/*try{
-				LocalBroadcastManager.getInstance(context).registerReceiver(mBroadcastReceiver, getIntentFilter());
-			}catch (Exception e){Log.d(TAG,"leaked register");}*/
 			scanLeDevice();
-			//return true;
-		} else {
-			//return false;
-
 		}
 
     }
@@ -275,20 +240,10 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 	private ScanCallback mScanCallback = new ScanCallback() {
 		@Override
 		public void onScanResult(int callbackType, ScanResult result) {
-			//byte[] mScanRecord = result.getScanRecord().getBytes();
-			//final StringBuilder stringBuilder = new StringBuilder(advertisementData.length);
-			//for (byte byteChar : advertisementData) { stringBuilder.append((char) byteChar);}
+
 			Log.d(TAG,"Scan result "+result.getScanRecord().getDeviceName());//+" "+result.getScanRecord().getServiceUuids()+" "+new String(result.getScanRecord().getManufacturerSpecificData(0)));
-			/*String action = USER_DISCOVERED;
-			Intent broadcast = new Intent(action);
-			broadcast.putExtra("username", new String(result.getScanRecord().getManufacturerSpecificData(0)));
-			broadcast.putExtra("address", result.getDevice().getAddress());
-			LocalBroadcastManager.getInstance(context).sendBroadcast(broadcast);*/
-			//String device = new String(result.getScanRecord().getManufacturerSpecificData(0));
-//			dListener.onUserDiscovered(new String(result.getScanRecord().getManufacturerSpecificData(0)),result.getDevice().getAddress());
-			//if(device.equals("pixel2"))
+
 			results.add(result.getDevice());
-			//lListener.peerDiscovered(result.getDevice().toString());
 		}
 
 		@Override
@@ -452,14 +407,7 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 			Log.d(TAG,"Not initialized.");
 			return;
 		}
-		/*List<UUID> groups = new ArrayList<>();
-		long num = Datahop.getAdvertisingUUIDNum();
-		for(int i=0;i<num;i++) {
-			String characteristic = Datahop.getAdvertisingUUID(i);
-			groups.add(UUID.nameUUIDFromBytes(characteristic.getBytes()));
-		}*/
-		//BluetoothGattCharacteristic characteristic = BluetoothUtils.findDataHopCharacteristic(mBluetoothGatt,mServiceUUID.getUuid());
-		List<UUID> groups = new ArrayList();
+     	List<UUID> groups = new ArrayList();
 		groups.addAll(advertisingInfo.keySet());
 
 		List<BluetoothGattCharacteristic> characteristics = BluetoothUtils.findCharacteristics(mBluetoothGatt,mServiceUUID.getUuid(),groups);
@@ -502,12 +450,6 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 			Log.d(TAG,"Gatt "+gatt.getServices().size());
 
-			/*List<UUID> groups = new ArrayList<>();
-			long num = Datahop.getAdvertisingUUIDNum();
-			for(int i=0;i<num;i++) {
-				String characteristic = Datahop.getAdvertisingUUID(i);
-				groups.add(UUID.nameUUIDFromBytes(characteristic.getBytes()));
-			}*/
 			List<UUID> groups = new ArrayList<>();
 			groups.addAll(advertisingInfo.keySet());
 			List<BluetoothGattCharacteristic> matchingCharacteristics = BluetoothUtils.findCharacteristics(gatt,mServiceUUID.getUuid(),groups);
@@ -518,9 +460,7 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 			for (BluetoothGattCharacteristic characteristic : matchingCharacteristics) {
 				Log.d(TAG, "characteristic: " + characteristic.getUuid().toString());
-				//characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
 				characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-				//characteristic.setWriteType(BluetoothGattCharacteristic.PARCELABLE_WRITE_RETURN_VALUE);
 				subscribe(characteristic);
 				enableCharacteristicNotification(gatt, characteristic);
 
@@ -628,30 +568,15 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 				if(!started)return;
 
-		//		ContentAdvertisement cAdv = ca.get(characteristic.getUuid());
-
 				byte[] messageBytes = null;
-				//List<UUID> groups = new ArrayList<>();
-				/*long num = Datahop.getAdvertisingUUIDNum();
-				for(int i=0;i<num;i++) {
-					String characeristicString = Datahop.getAdvertisingUUID(i);
-					//Log.d(TAG,"Try writing "+characeristicString+" "+UUID.nameUUIDFromBytes(characeristicString.getBytes()));
-					UUID characteristicUUID = UUID.nameUUIDFromBytes(characeristicString.getBytes());
-					if(characteristicUUID.equals(characteristic.getUuid()))messageBytes= Datahop.getAdvertisingInfo(characeristicString);
-
-				}*/
-
 
 				for(UUID uuid : advertisingInfo.keySet()){
 					Log.d(TAG,"Advertising info uuid "+uuid+" "+characteristic.getUuid());
 					if(characteristic.getUuid().equals(uuid))messageBytes=advertisingInfo.get(uuid);
 					break;
 				}
-				/*byte[] messageBytes = Datahop.getAdvertisingInfo("topic1");
-				Log.d(TAG,"Try writing "+characteristic.getUuid().toString());
-				Log.d(TAG,"Try writing "+messageBytes.toString());*/
+
 				if(messageBytes!=null) {
-					//byte[] messageBytes = new byte[10];
 
 					Log.d(TAG, "Sending message: " + new String(messageBytes) + " " + messageBytes.length + " " + characteristic.getUuid().toString());
 
@@ -663,8 +588,7 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 					characteristic.setValue(messageBytes);
 					mInitialized = false;
 					sending = true;
-					//mBluetoothGatt.getDevice().
-					//mBluetoothGatt.abortReliableWrite();
+
 					boolean success = mBluetoothGatt.writeCharacteristic(characteristic);
 					int tries = 0;
 					while (started && !success && tries < 5) {
