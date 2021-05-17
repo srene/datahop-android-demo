@@ -20,46 +20,46 @@ import datahop.Datahop;
 import datahop.ConnectionHook;
 import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
-import network.datahop.datahopdemo.net.wifi.HotspotListener;
 import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
 import network.datahop.datahopdemo.net.wifi.WifiLink;
 
-public class MainActivity extends AppCompatActivity implements ConnectionHook,  HotspotListener {
+public class MainActivity extends AppCompatActivity implements ConnectionHook {
 
     private static final String root = ".datahop";
     private static final String TAG = MainActivity.class.getSimpleName();
     ArrayList<String> activePeers = new ArrayList<>();
 
- //   WifiDirectHotSpot hotspot;
-
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final int PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 2;
     private static final int PERMISSION_WIFI_STATE = 3;
-    //private static final int PERMISSION_REQUEST_WIFI_CHANGE = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //Log.d("-----Version :", Datahop.version());
+        Log.d("-----Version :", Datahop.version());
         try {
             BLEServiceDiscovery bleDiscoveryDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
+            //bleDiscoveryDriver.setNotifier(Datahop.getBleDiscNotifier());
 
             BLEAdvertising bleAdvertisingDriver = BLEAdvertising.getInstance(getApplicationContext());
+            //bleAdvertisingDriver.setNotifier(Datahop.getBleAdvNotifier());
 
             WifiDirectHotSpot hotspot = WifiDirectHotSpot.getInstance(getApplicationContext());
+            //hotspot.setNotifier(Datahop.getWifiHotspotNotifier());
 
             WifiLink connection = WifiLink.getInstance(getApplicationContext());
+            //connection.setNotifier(Datahop.getWifiConnectionNotifier());
 
-            //Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver,bleAdvertisingDriver,connection,hotspot);
-            // set ble driver
+            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver, bleAdvertisingDriver, connection, hotspot);
 
-            connection.connect("DIRECT-4Z-SM-N976B","oFTWAavS","192.168.49.53");
-            //hotspot.start();
+
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        /*Log.d("Node Id", Datahop.getID());
+        Log.d("Node Id", Datahop.getID());
         Log.d("Node Status onCreate", String.valueOf(Datahop.isNodeOnline()));
         if (!Datahop.isNodeOnline()) {
             try {
@@ -67,16 +67,16 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }*/
+        }
 
         requestForPermissions();
-        //startHotspot();
+
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
-        Log.d(TAG,"Permissions "+requestCode+" "+permissions+" "+grantResults);
+        Log.d(TAG, "Permissions " + requestCode + " " + permissions + " " + grantResults);
         switch (requestCode) {
             case PERMISSION_REQUEST_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
@@ -84,13 +84,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
-                    Log.d(TAG,"Location accepted");
+                    Log.d(TAG, "Location accepted");
                     //timers.setLocationPermission(true);
                     //if(timers.getStoragePermission())startService();
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
-                    Log.d(TAG,"Location not accepted");
+                    Log.d(TAG, "Location not accepted");
 
                 }
                 break;
@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
-                    Log.d(TAG,"Storage accepted");
+                    Log.d(TAG, "Storage accepted");
                     //timers.setStoragePermission(true);
                     //new CreateWallet(getApplicationContext()).execute();
                     //if(timers.getLocationPermission())startService();
@@ -118,8 +118,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
     }
 
-    private void requestForPermissions()
-    {
+    private void requestForPermissions() {
         if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
@@ -159,15 +158,15 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
 
     public void onStart() {
         super.onStart();
-        //Log.d("Node Status onStart", String.valueOf(Datahop.isNodeOnline()));
+        Log.d("Node Status onStart", String.valueOf(Datahop.isNodeOnline()));
         try {
-            /*String Id = Datahop.getID();
+            String Id = Datahop.getID();
             final TextView textViewID = this.findViewById(R.id.textview_id);
             textViewID.setText(Id);
 
             String addrs = Datahop.getAddress();
             final TextView textViewAddrs = this.findViewById(R.id.textview_address);
-            textViewAddrs.setText(addrs);*/
+            textViewAddrs.setText(addrs);
 
             final Button button = findViewById(R.id.button);
             button.setOnClickListener(new View.OnClickListener() {
@@ -177,14 +176,21 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
                     String generatedString = new String(array, Charset.forName("UTF-8"));
                     final TextView text = findViewById(R.id.textView);
                     text.setText(generatedString);
-                    Log.d(TAG,"Refresh status "+generatedString);
+                    Log.d(TAG, "Refresh status " + generatedString);
                     // Code here executes on main thread after user presses button
-                    //Datahop.updateTopicStatus("topic1",generatedString.getBytes());
+                    Datahop.updateTopicStatus("topic1", generatedString.getBytes());
                 }
             });
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        Datahop.stop();
+
+        super.onStop();
     }
 
     @Override
@@ -199,53 +205,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook,  
         activePeers.remove(s);
     }
 
-    /*@Override
-    public void startHotspot(){
-
-        if (!hotspot.isConnected()) {
-            Log.d(TAG, "Job adv finished not connected");
-            hotspot.stop(new WifiDirectHotSpot.StartStopListener() {
-                public void onSuccess() {
-                    Log.d(TAG, "Hotspot stop success");
-                    hotspot.start(new WifiDirectHotSpot.StartStopListener() {
-                        public void onSuccess() {
-                            Log.d(TAG, "Hotspot started");
-                        }
-
-                        public void onFailure(int reason) {
-                            Log.d(TAG, "Hotspot started failed, error code " + reason);
-                        }
-                    });
-                }
-
-                public void onFailure(int reason) {
-                    Log.d(TAG, "Hotspot stop failed, error code " + reason);
-                }
-            });
-
-        }
-
-    }
-
-    @Override
-    public void stopHotspot(){}*/
-
-
-    @Override
-    public void setNetwork(String network, String password) {
-        Log.d(TAG, "Set network " + network);
-        //serverCallback.setNetwork(network, password);
-    }
-
-    @Override
-    public void connected() {
-        //mDataSharingServer.start();
-    }
-
-    @Override
-    public void disconnected() {
-        //mDataSharingServer.close();
-    }
 
 
 }

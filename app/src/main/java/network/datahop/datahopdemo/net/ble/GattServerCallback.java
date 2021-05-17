@@ -18,25 +18,14 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.ParcelUuid;
 import android.util.Log;
-
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
-
-import datahop.Datahop;
-import network.datahop.datahopdemo.net.ContentAdvertisement;
-import network.datahop.datahopdemo.net.StatsHandler;
-import network.datahop.datahopdemo.net.wifi.WifiDirectHotSpot;
-import network.datahop.datahopdemo.net.Config;
 
 import static network.datahop.datahopdemo.net.ble.Constants.CLIENT_CONFIGURATION_DESCRIPTOR_UUID;
 
@@ -147,7 +136,7 @@ public class GattServerCallback extends BluetoothGattServerCallback {
             Log.d(TAG, "Characteristic check " + characteristic.getUuid().toString() + " " + network + " " + valueString2 + " " + valueString);
             if (!valueString.equals(valueString2)) {
                 Log.d(TAG, "Connecting");
-                listener.differentStatusDiscovered();
+                listener.differentStatusDiscovered(value);
                 /*hotspot.start(new WifiDirectHotSpot.StartStopListener() {
                     public void onSuccess() {
                         Log.d(TAG, "Hotspot started");

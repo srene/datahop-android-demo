@@ -33,7 +33,6 @@ import java.util.List;
 
 import datahop.Datahop;
 import network.datahop.datahopdemo.net.Config;
-import network.datahop.datahopdemo.net.StatsHandler;
 
 
 import datahop.WifiConnection;
@@ -56,8 +55,6 @@ public class WifiLink  implements WifiConnection {
 
     private boolean hadConnection = false;
 
-    //StatsHandler stats;
-    WifiLinkListener listener;
     WifiManager wifiManager = null;
     WifiConfiguration wifiConfig = null;
     Context context = null;
@@ -112,14 +109,17 @@ public class WifiLink  implements WifiConnection {
         return mWifiLink;
     }
 
-    public void setNotifier(WifiConnectionNotifier notifier){
-        this.notifier = notifier;
-    }
 
     public void connect(String SSID, String password,String ip){
     //    public void connect(String SSID, String password,String ip,String userId){
         //
-        disconnect();
+        this.notifier = Datahop.getWifiConnectionNotifier();
+
+        if (notifier == null) {
+            Log.e(TAG, "notifier not found");
+            return ;
+        }
+        //disconnect();
         Log.d(TAG,"Start connection to ssid "+SSID+" Pass:"+password);
         if(!connected&&(mConectionState==ConectionStateNONE||mConectionState==ConectionStateDisconnected)) {
             started = new Date();
@@ -168,6 +168,7 @@ public class WifiLink  implements WifiConnection {
             //this.wifiManager.disconnect();
             this.context.registerReceiver(receiver, filter);
             this.netId = this.wifiManager.addNetwork(this.wifiConfig);
+            Log.d(TAG,"Wifimanager add network "+netId);
             this.wifiManager.disconnect();
             this.wifiManager.enableNetwork(this.netId, true);
             this.wifiManager.reconnect();
@@ -206,7 +207,7 @@ public class WifiLink  implements WifiConnection {
             mConectionState=ConectionStateNONE;
             mPreviousState=ConectionStateNONE;
             Log.d(TAG,"Report disconnection");
-            if(notifier!=null)notifier.onFailure(1);
+            if(notifier!=null)notifier.onDisconnect();
             // listener.wifiLinkDisconnected();
 
         }

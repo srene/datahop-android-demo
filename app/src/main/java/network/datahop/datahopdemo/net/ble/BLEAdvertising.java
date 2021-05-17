@@ -21,6 +21,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.util.HashMap;
 import java.util.UUID;
 
+import datahop.BleDiscNotifier;
 import datahop.Datahop;
 import datahop.BleAdvNotifier;
 
@@ -66,6 +67,10 @@ public class BLEAdvertising  implements BleAdvertisingDriver{
         Log.d(TAG, "Starting ADV, Tx power " + parcelUuid.toString());
         this.notifier = Datahop.getBleAdvNotifier();
 
+        if (notifier == null) {
+            Log.e(TAG, "notifier not found");
+            return ;
+        }
         if (btAdapter != null) {
             if (btAdapter.isMultipleAdvertisementSupported()) {
                 Log.d(TAG, "Starting ADV2, Tx power " + parcelUuid.toString());
@@ -104,8 +109,8 @@ public class BLEAdvertising  implements BleAdvertisingDriver{
             }
 
             @Override
-            public void differentStatusDiscovered() {
-                notifier.differentStatusDiscovered();
+            public void differentStatusDiscovered(byte[] value) {
+                notifier.differentStatusDiscovered(value);
             }
         });
         mBluetoothGattServer = manager.openGattServer(context, serverCallback);

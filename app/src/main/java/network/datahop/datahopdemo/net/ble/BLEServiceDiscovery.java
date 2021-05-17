@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import datahop.Datahop;
-import network.datahop.datahopdemo.net.StatsHandler;
 import network.datahop.datahopdemo.net.Config;
 
 import static android.content.Context.BLUETOOTH_SERVICE;
@@ -81,7 +80,6 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 	private BluetoothDevice device=null;
 	private ParcelUuid mServiceUUID;
-	private StatsHandler stats;
 	private int pendingWrite;
 	private boolean sending;
 
@@ -119,7 +117,7 @@ public class BLEServiceDiscovery implements BleDiscoveryDriver{
 
 	@Override
 	public void start(String service_uuid) {
-		this.notifier = Datahop.getBleDiscNotifier();
+		notifier = Datahop.getBleDiscNotifier();
 		if (notifier == null) {
 			Log.e(TAG, "notifier not found");
 			return ;

@@ -13,25 +13,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
-import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.ChannelListener;
 import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
 import android.net.wifi.p2p.WifiP2pManager.GroupInfoListener;
-import android.os.Handler;
 import android.util.Log;
-
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-import java.util.Collection;
-
-import datahop.Datahop;
-import datahop.WifiConnectionNotifier;
-import network.datahop.datahopdemo.net.Config;
-import network.datahop.datahopdemo.net.StatsHandler;
-import network.datahop.datahopdemo.net.ble.BLEAdvertising;
 
 import static android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION;
 import static android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION;
@@ -39,6 +27,8 @@ import static android.net.wifi.p2p.WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION;
 
 import datahop.WifiHotspotNotifier;
 import datahop.WifiHotspot;
+import datahop.Datahop;
+
 /**
  * Created by srenevic on 03/08/17.
  */
@@ -94,14 +84,15 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         return mWifiHotspot;
     }
 
-    public void setNotifier(WifiHotspotNotifier notifier){
-        this.notifier = notifier;
-    }
-
     public void start(){
         Log.d(TAG,"Trying to start");
-        //this.notifier = Datahop.getWifiHostpotNotifier();
+        this.notifier = Datahop.getWifiHotspotNotifier();
 
+
+        if (notifier == null) {
+            Log.e(TAG, "notifier not found");
+            return ;
+        }
         if(!started) {
             Log.d(TAG,"Start");
             started=true;
@@ -150,7 +141,9 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         if(started)
         {
             Log.d(TAG,"Stop");
-            removeGroup(null);
+            try {
+                removeGroup();
+            }catch (Exception e){Log.d(TAG,"Remove group error "+e);}
             started=false;
         } else {
             //listener.onSuccess();
@@ -165,7 +158,7 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
 
     public boolean isConnected() {return connected;}*/
 
-    public void removeGroup(StartStopListener listener) {
+    public void removeGroup() {
         Log.d(TAG,"removegroup");
         p2p.removeGroup(channel,new WifiP2pManager.ActionListener() {
             public void onSuccess() {
@@ -216,7 +209,7 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
         try {
             //Collection<WifiP2pDevice> devlist = group.getClientList();
    //         stats.setHsSSID(group.getNetworkName());
-            notifier.clientsConnected(group.getClientList().size());
+            if(notifier!=null)notifier.clientsConnected(group.getClientList().size());
             /*int numm = 0;
             for (WifiP2pDevice peer : group.getClientList()) {
                 numm++;
@@ -241,8 +234,8 @@ public class WifiDirectHotSpot implements ConnectionInfoListener,ChannelListener
 
                 mNetworkName = group.getNetworkName();
                 mPassphrase = group.getPassphrase();
-
-                notifier.networkInfo(mNetworkName,mPassphrase);
+                Log.d(TAG,"onGroupInfoAvailable "+mNetworkName+" "+mPassphrase);
+                if(notifier!=null)notifier.networkInfo(mNetworkName,mPassphrase);
             }
 
         } catch(Exception e) {
