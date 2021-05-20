@@ -46,5 +46,10 @@ dependencies {
 
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'com.google.api-client:google-api-client:1.30.8'
+
+    //implementation(name: 'datahop', ext: 'aar')
+    /*implementation(name: 'wifidirect-release', ext: 'aar')
+    compileOnly(name: 'wifi', ext: 'aar')*/
     implementation fileTree(dir: "libs", include: ["*.aar"])
+
 }
