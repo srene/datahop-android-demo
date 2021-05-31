@@ -17,15 +17,15 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import datahop.Datahop;
-import datahop.ConnectionHook;
-import network.datahop.datahopdemo.net.ble.BLEAdvertising;
-import network.datahop.datahopdemo.net.ble.BLEServiceDiscovery;
+import datahop.ConnectionManager;
+import network.datahop.blediscovery.BLEAdvertising;
+import network.datahop.blediscovery.BLEServiceDiscovery;
 import network.datahop.wifidirect.WifiDirectHotSpot;
 import network.datahop.wifidirect.WifiLink;
 //import wifidriver.WifiConnection;
 //import wifidriver.WifiConnectionNotifier;
 
-public class MainActivity extends AppCompatActivity implements ConnectionHook {
+public class MainActivity extends AppCompatActivity implements ConnectionManager {
 
     private static final String root = ".datahop";
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook {
 
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final int PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 2;
-    private static final int PERMISSION_WIFI_STATE = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,23 +41,25 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook {
         Log.d("-----Version :", Datahop.version());
         try {
             BLEServiceDiscovery bleDiscoveryDriver = BLEServiceDiscovery.getInstance(getApplicationContext());
-            //bleDiscoveryDriver.setNotifier(Datahop.getBleDiscNotifier());
 
             BLEAdvertising bleAdvertisingDriver = BLEAdvertising.getInstance(getApplicationContext());
-            //bleAdvertisingDriver.setNotifier(Datahop.getBleAdvNotifier());
 
             WifiDirectHotSpot hotspot = WifiDirectHotSpot.getInstance(getApplicationContext());
-
             WifiLink connection = WifiLink.getInstance(getApplicationContext());
 
-            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver, bleAdvertisingDriver, connection, hotspot);
+            Datahop.init(getApplicationContext().getCacheDir() + "/" + root, this, bleDiscoveryDriver, bleAdvertisingDriver, hotspot,connection);
 
-            //hotspot.setNotifier(Datahop.getWifiHotspotNotifier());
-            //connection.setNotifier(Datahop.getWifiConnectionNotifier());
+            bleAdvertisingDriver.setNotifier(Datahop.getBleAdvNotifier());
+            bleDiscoveryDriver.setNotifier(Datahop.getBleDiscNotifier());
+            hotspot.setNotifier(Datahop.getWifiHotspotNotifier());
+            connection.setNotifier(Datahop.getWifiConnectionNotifier());
+
+            Datahop.start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d("Node Id", Datahop.getID());
+        Log.d("Node Id", Datahop.peerInfo());
         Log.d("Node Status onCreate", String.valueOf(Datahop.isNodeOnline()));
         if (!Datahop.isNodeOnline()) {
             try {
@@ -129,28 +130,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook {
             });
             builder.show();
         }
-        if (this.checkSelfPermission(Manifest.permission.CHANGE_WIFI_STATE) != PackageManager.PERMISSION_GRANTED) {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                @Override
-                public void onDismiss(DialogInterface dialog) {
-                    requestPermissions(new String[]{Manifest.permission.CHANGE_WIFI_STATE}, PERMISSION_WIFI_STATE);
-                }
-            });
-            builder.show();
-        }
-        if (this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                @Override
-                public void onDismiss(DialogInterface dialog) {
-                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE);
-                }
-            });
-            builder.show();
-        }
 
     }
 
@@ -159,13 +139,13 @@ public class MainActivity extends AppCompatActivity implements ConnectionHook {
         super.onStart();
         Log.d("Node Status onStart", String.valueOf(Datahop.isNodeOnline()));
         try {
-            String Id = Datahop.getID();
+            String Id = Datahop.peerInfo();
             final TextView textViewID = this.findViewById(R.id.textview_id);
             textViewID.setText(Id);
 
-            String addrs = Datahop.getAddress();
+            /*String addrs = Datahop.getAddress();
             final TextView textViewAddrs = this.findViewById(R.id.textview_address);
-            textViewAddrs.setText(addrs);
+            textViewAddrs.setText(addrs);*/
 
             final Button button = findViewById(R.id.button);
             button.setOnClickListener(new View.OnClickListener() {
